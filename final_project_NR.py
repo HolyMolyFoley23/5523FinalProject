@@ -8,7 +8,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-data_path = './winequalityN.csv'
+#data_path = './winequalityN.csv'
+#HI 
+data_path = r'winequalityN.csv'
 wine = pd.read_csv(data_path)
 
 
