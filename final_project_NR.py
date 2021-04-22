@@ -127,7 +127,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
-
+from sklearn.manifold import TSNE
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
 white_labels = [3, 4, 5, 6, 7, 8, 9]
@@ -158,6 +158,31 @@ SSE_red = []
 
 # TODO: add in functions for precision, MAD, and REC - M
 # TODO: 2D representation of classifier splitting data - J
+
+# %%
+def two_dimensional_representation(x_data,y_data,title="t-SNE wine"):
+    tsne = TSNE(verbose=1, perplexity=50, random_state = 42)
+    X_embedded_data= tsne.fit_transform(x_data)
+
+
+    # sns settings
+    sns.set(rc={'figure.figsize':(8,8)})
+
+    # colors
+    palette = sns.color_palette("bright", 1)
+
+    real = white_test_y
+    palette = sns.color_palette("bright", len(set(real)))
+    print(real)
+    # plot
+    sns.scatterplot(X_white[:,0], X_white[:,1], hue = real, palette=palette)
+
+    plt.title(title)
+    # plt.savefig("plots/t-sne_wine.png")
+    plt.show()
+
+two_dimensional_representation(red_test_x,red_test_y,"Red Default")
+#%%
 '''
 # defining SSE
 def SSE(actual, pred):
