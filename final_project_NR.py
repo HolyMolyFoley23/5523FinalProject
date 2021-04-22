@@ -369,6 +369,8 @@ def Authors_SVM(x_train, y_train, x_test, y_test):
     red_gamma = 2**0.19  # 1.14
     gamma = np.logspace(-3, 6, 20, 2)
     parameters = {'C':range(1,20), 'gamma':gamma}
+    best_w = {'C': 2, 'gamma': 0.6951927961775606}
+    best_r = {'C': 1, 'gamma': 0.07847599703514611}
     author_params = {'C':[3], 'gamma':[white_gamma, red_gamma]}
     svm_clf = svm.SVR(kernel='rbf')
 
@@ -428,9 +430,9 @@ oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_
 
 
 # %%
-# Nearest Neighbors
+# Nearest Neighbors, the unsupervised version doesn't allow for classification
 # TODO: Mathew: make function - M
-from sklearn.neighbors import RadiusNeighborsClassifier # this is unsupervised version
+from sklearn.neighbors import RadiusNeighborsClassifier
 def RNC(x_train, y_train, x_test, y_test):
     parameters = {
         'weights': ['uniform', 'distance'],
@@ -439,11 +441,10 @@ def RNC(x_train, y_train, x_test, y_test):
         'outlier_label':['most_frequent'],
         'algorithm': ['ball_tree', 'kd_tree', 'brute']
         }
-    best_params = {
-        'weights': ['distance'], 'radius': [2.5], 'outlier_label':['most_frequent'], 'algorithm': ['ball_tree'] 
-    }
+    best_w = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
+    best_r = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
     model = RadiusNeighborsClassifier()
-    clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=5)
+    clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=3)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -781,8 +782,8 @@ def MLP(x_train, y_train, x_test, y_test):
         'max_iter': [1000],
 
         }
-    best_param_w = {'activation': 'tanh', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
-    best_param_r = {'activation': 'relu', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
+    best_w = {'activation': 'tanh', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
+    best_r = {'activation': 'relu', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
     model = MLPClassifier()
     clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=3)
     clf.fit(x_train, y_train)
