@@ -65,6 +65,11 @@ white = white.dropna()
 red = red.dropna()
 
 # TODO: remove 3 and 9 quality wines - N
+
+# dropping 'outliers', i.e., records w/ 'quality' values of 3 or 9
+white = white[(white.quality != 3) & (white.quality != 9)]
+red = red[(red.quality != 3) & (red.quality != 9)]
+
 # TODO: standardized to a zero mean and one standard deviation for input attr - N
 
 
@@ -159,6 +164,13 @@ white_y = white['quality']
 white_train_x, white_test_x, white_train_y, white_test_y = train_test_split(white_x, white_y, test_size=test_size, random_state=42, shuffle=True, stratify=white_y)
 white_train_y = white_train_y.to_numpy()
 white_test_y = white_test_y.to_numpy()
+
+# standardizing feature values
+scaler = StandardScaler()
+white_train_x = scaler.fit_transform(white_train_x)
+white_test_x = scaler.fit_transform(white_test_x)
+red_train_x = scaler.fit_transform(red_train_x)
+red_test_x = scaler.fit_transform(red_test_x)
 
 # Models and metrics lists for later plotting/comparison
 models_white = []
