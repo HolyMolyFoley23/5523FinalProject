@@ -373,7 +373,11 @@ red_trivial_cm
 plt.show()
 plt.clf()
 
-
+#%%
+#import metrics
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import precision_score
+from sklearn.metrics import confusion_matrix
 
 
 # %%
@@ -382,9 +386,6 @@ plt.clf()
 # TODO: Mathew: make function and try to replicate - M
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import precision_score
-from sklearn.metrics import confusion_matrix
 np.set_printoptions(precision=4)
 def Authors_SVM(x_train, y_train, x_test, y_test):
     # using gamma values that the authors found were the best
@@ -447,13 +448,30 @@ oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_
 # %%
 # # Clustering
 # from sklearn.cluster import KMeans
-# TODO: make function - J
-#from sklearn.cluster import KMeans
-#def K_means(x_train, y_train, x_test, y_test):
+# TODO: make function - Jack
+from sklearn.cluster import KMeans
+def K_means(x_train, y_train, x_test, y_test, title = "Wine"):
+    distortions = []
+    for k in range(1,11):
+        kmeans = KMeans(n_clusters=k, verbose=False, random_state=42)
+        kmeans.fit(x_train, y_train)
+        distortions.append(kmeans.inertia_)
+    plt.plot(range(1, 11), distortions, marker='o')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Distortion')
+    plt.title(title)
+    plt.show()
 
+    # print confusion matrix
+    #conf = confusion_matrix(y_test, y_pred)
+    #print(conf)
+    
+    # get precision scores
+    #prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
+    #print(prec_w)
 
-
-
+K_means(white_train_x, white_train_y, white_test_x, white_test_y,"white wine")
+K_means(red_train_x, red_train_y, red_test_x, red_test_y,"red wine")
 
 # %%
 # Nearest Neighbors, the unsupervised version doesn't allow for classification
