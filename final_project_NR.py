@@ -18,8 +18,17 @@ SVM relative importance plots for attributes?
 “We will adopt a regression approach, which preserves the order of the preferences.
 For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7.”'''
 
+# %% 
+## Defining functions
+from sklearn.feature_selection import SelectKBest
 
-
+def FeatureSelection(k, df, x_train, y_train, x_test, y_test):
+    s = SelectKBest(k=k).fit(x_train, y_train)
+    mask = s.get_support(True)
+    selected_features = df.columns[mask].tolist()
+    train_selected = SelectKBest(k=k).fit_transform(x_train, y_train)
+    test_selected = SelectKBest(k=k).fit_transform(x_test, y_test)
+    return train_selected, test_selected, selected_features
 
 # %%
 ## Data preprocessing and cleaning
