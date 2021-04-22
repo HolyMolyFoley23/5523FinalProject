@@ -29,6 +29,18 @@ SVM hyperparameter tuning
 “We will adopt a regression approach, which preserves the order of the preferences. For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7.”
 
 
+look into PCA ->KNC/KNN
+
+We will adopt the popular Gaussian kernel, which presents less parameters than other kernels
+(e.g. polynomial) [31]: K(x,x′) = exp(− γ||x − x′||2), γ > 0. Under this setup, the SVM performance
+is affected by three parameters: γ, ε and C (a trade-off between fitting the errors and the flatness
+of the mapping). To reduce the search space, the first two values will be set using the
+heuristics[5]: C = 3 (for a standardized output) and ɛ, where σ̂ = 1.5 / N × ∑i = 1N(yi − ŷi)2 and
+ŷ is the value predicted by a 3-nearest neighbor algorithm. The kernel parameter (γ) produces the
+highest impact in the SVM performance, with values that are too large or too small leading to poor
+predictions. A practical method to set γ is to start the search from one of the extremes and then
+search towards the middle of the range while the predictive estimate increases
+
 '''
 
 
@@ -122,7 +134,7 @@ plt.clf()
 # Paper did a 2/3 1/3 split
 
 # It eventually won't matter when we do k-fold cross validation
-# but it can easily be adjusted for preliminary models with test_size=0.33 - Mathew
+# but it can easily be adjusted for preliminary models with test_size=0.33
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn import metrics
@@ -157,6 +169,26 @@ accuracy_red = []
 SSE_red = []
 
 # TODO: add in functions for precision, MAD, and REC - M
+# ok actually these were useless...whopps
+def precision(clf, X_test, y_true, labels=None):
+    y_pred = clf.predict(X_test)
+    scores = precision_score(y_true, y_pred, labels)
+    return scores
+
+
+def MAD(y_true, y_pred):
+    # author's MAD == scikit learn's MAE
+    from sklearn.metrics import mean_absolute_error
+    score = mean_absolute_error(y_true, y_pred) 
+    return score
+
+
+def REC():
+    # wtf why did the authors use something that has almost zero resources for it? At least for python
+    pass
+
+
+
 # TODO: 2D representation of classifier splitting data - J
 '''
 # defining SSE
@@ -343,15 +375,48 @@ plt.clf()
 # %%
 ## Replicate Author's SVM
 # Support vector machines
-# use LIBSVM  ?
-# TODO: make function and try to replicate - M
+
+# TODO: Mathew: make function and try to replicate - M
 from sklearn import svm
-from sklearn.model_selection import RandomizedSearchCV
-parameters = {'C':range(1,20), 'gamma':['scale', 'auto']}
-svm = svm.SVR(kernel='rbf', cache_size=400)
-clf = RandomizedSearchCV(svm, parameters, n_jobs=1, n_iter=10, verbose=True, random_state=42, cv=3)
-clf.fit(white_train_x, white_train_y)
-print(clf.best_params_)
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import precision_score
+from sklearn.metrics import confusion_matrix
+np.set_printoptions(precision=4)
+def Authors_SVM(x_train, y_train, x_test, y_test):
+    # using gamma values that the authors found were the best
+    white_gamma = 2**1.55  # 2.928
+    red_gamma = 2**0.19  # 1.14
+    gamma = np.logspace(-3, 6, 20, 2)
+    parameters = {'C':range(1,20), 'gamma':gamma}
+    # above gives best parameters: {} {'C': 2, 'gamma': 0.23357214690901212} for white
+    # best parameters: {} {'C': 19, 'gamma': 0.002976351441631319} for red
+    author_params = {'C':[3], 'gamma':[white_gamma]}
+    svm_clf = svm.SVR(kernel='rbf')
+
+
+    clf = GridSearchCV(svm_clf, author_params, n_jobs=4, verbose=True, cv=5)
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
+
+    print('best parameters: {}', clf.best_params_)
+    print('best score: {}', clf.best_score_)
+    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+
+    # print confusion matrix
+    conf = confusion_matrix(y_test, y_pred)
+    print(conf)
+    
+    # get precision scores
+    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
+    print(prec_w)
+
+    # from sklearn.metrics import classification_report
+    
+
+Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y)
+Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 
@@ -427,8 +492,40 @@ oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_
 # from sklearn.cluster import KMeans
 # TODO: make function - J
 
-# from sklearn.neighbors import NearestNeighbors as NN # this is unsupervised version
-# TODO: make function - M
+
+
+
+# %%
+# Nearest Neighbors
+# TODO: Mathew: make function - M
+from sklearn.neighbors import RadiusNeighborsClassifier # this is unsupervised version
+def RNC(x_train, y_train, x_test, y_test):
+    parameters = {'weights': ['uniform', 'distance'], 'radius': np.arange(1.0, 50.0, 0.5), 'n_jobs': [2], 'outlier_label':['most_frequent'] }
+    model = RadiusNeighborsClassifier()
+    clf = GridSearchCV(model, parameters, n_jobs=2, verbose=True, cv=5)
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
+
+    print('best parameters: {}', clf.best_params_)
+    print('best score: {}', clf.best_score_)
+    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+
+    # print confusion matrix
+    conf = confusion_matrix(y_test, y_pred)
+    print(conf)
+    
+    # get precision scores
+    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
+    print(prec_w)
+
+    # TODO: Mathew: once we have the best parameters, maybe then we should do a special run and analysis of that model?
+    
+
+RNC(white_train_x, white_train_y, white_test_x, white_test_y)
+RNC(red_train_x, red_train_y, red_test_x, red_test_y)
+
+
 
 
 ## Supervised Learning
@@ -728,14 +825,41 @@ plt.clf()
 
 # %%
 # # Neural network - might not have great performance
-# TODO: make function - M
-# #max_iter default is 200
-# from sklearn.neural_network import MLPClassifier
-# clf = MLPClassifier(random_state = 42, max_iter = 200)
-# clf_pred = clf.predict(white_test_x)
-# print (f" Accuracy for neural_network is {accuracy_score(white_test_y, clf_pred)}")
-# print(confusion_matrix(white_test_y, clf_pred, labels = white_labels))
+# TODO: Mathew: make function - M
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import precision_score
+from sklearn.metrics import confusion_matrix
+from sklearn.neural_network import MLPClassifier, MLPRegressor
+def MLP(x_train, y_train, x_test, y_test):
+    parameters = {
+        'activation': ['logistic'],
+        'alpha': [0.01, 0.001, 0.0001, 0.00001],
+        'learning_rate': ['constant', 'invscaling', 'adaptive'],
+        'random_state':[42],
 
+        }
+    model = MLPClassifier()
+    clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=3)
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
+
+    print('best parameters: {}', clf.best_params_)
+    print('best score: {}', clf.best_score_)
+    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+
+    # print confusion matrix
+    conf = confusion_matrix(y_test, y_pred)
+    print(conf)
+    
+    # get precision scores
+    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
+    print(prec_w)
+    
+
+MLP(white_train_x, white_train_y, white_test_x, white_test_y)
+MLP(red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 
@@ -743,6 +867,9 @@ plt.clf()
 # %%
 # ## feature selection
 # TODO: make function, maybe use PCA? - N
+
+
+
 
 # ## retrain with shuffled stratified K-fold cross validation
 # %%
