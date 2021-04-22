@@ -13,35 +13,11 @@ import seaborn as sns
 data_path = r'winequalityN.csv'
 wine = pd.read_csv(data_path)
 
+'''Some things to consider from the paper...
+SVM relative importance plots for attributes?
+“We will adopt a regression approach, which preserves the order of the preferences.
+For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7.”'''
 
-'''
-Some things to consider from the paper...
-
-Data was first standardized to a zero mean and one standard deviation
-The use of regression error characteristic curve for evaluation
-The use of mean absolute deviation for regression evaluation
-The use of precision for evaluation
-SVM with gaussian kernel using γ, ε and C
-Sensitivity analysis for attribute pruning
-Classification of quality 3 and 9 were impossible for the authors - why is that?
-SVM relative importance plots for attributes
-SVM hyperparameter tuning
-“We will adopt a regression approach, which preserves the order of the preferences. For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7.”
-
-
-look into PCA ->KNC/KNN
-
-We will adopt the popular Gaussian kernel, which presents less parameters than other kernels
-(e.g. polynomial) [31]: K(x,x′) = exp(− γ||x − x′||2), γ > 0. Under this setup, the SVM performance
-is affected by three parameters: γ, ε and C (a trade-off between fitting the errors and the flatness
-of the mapping). To reduce the search space, the first two values will be set using the
-heuristics[5]: C = 3 (for a standardized output) and ɛ, where σ̂ = 1.5 / N × ∑i = 1N(yi − ŷi)2 and
-ŷ is the value predicted by a 3-nearest neighbor algorithm. The kernel parameter (γ) produces the
-highest impact in the SVM performance, with values that are too large or too small leading to poor
-predictions. A practical method to set γ is to start the search from one of the extremes and then
-search towards the middle of the range while the predictive estimate increases
-
-'''
 
 
 
@@ -65,12 +41,10 @@ white = white.dropna()
 red = red.dropna()
 
 # TODO: remove 3 and 9 quality wines - N
-
 # dropping 'outliers', i.e., records w/ 'quality' values of 3 or 9
 white = white[(white.quality != 3) & (white.quality != 9)]
 red = red[(red.quality != 3) & (red.quality != 9)]
 
-# TODO: standardized to a zero mean and one standard deviation for input attr - N
 
 
 
@@ -114,8 +88,6 @@ plt.show()
 plt.clf()
 # appears that quality of both red and white wine follows roughly a normal distribution
 
-
-
 # Correlation maps
 # white wine
 plt.figure(figsize=(10,6))
@@ -142,13 +114,13 @@ plt.clf()
 # but it can easily be adjusted for preliminary models with test_size=0.33
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
-from sklearn import metrics
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
-white_labels = [3, 4, 5, 6, 7, 8, 9]
-red_labels = [3, 4, 5, 6, 7, 8]
+white_labels = [4, 5, 6, 7, 8]
+red_labels = [4, 5, 6, 7, 8]
 test_size = 0.33
 
 # Red wine
@@ -165,6 +137,7 @@ white_train_x, white_test_x, white_train_y, white_test_y = train_test_split(whit
 white_train_y = white_train_y.to_numpy()
 white_test_y = white_test_y.to_numpy()
 
+# TODO: standardized to a zero mean and one standard deviation for input attr - N
 # standardizing feature values
 scaler = StandardScaler()
 white_train_x = scaler.fit_transform(white_train_x)
@@ -196,13 +169,13 @@ def MAD(y_true, y_pred):
 
 
 def REC():
-    # wtf why did the authors use something that has almost zero resources for it? At least for python
+    # wtf why did the authors use something that has almost zero resources for it? At least in python
     pass
 
 
 
 # TODO: 2D representation of classifier splitting data - J
-'''
+
 # defining SSE
 def SSE(actual, pred):
     s = 0
@@ -210,12 +183,10 @@ def SSE(actual, pred):
         s += abs(actual[i]-pred[i])**2
     return s
 
-
 def ROC_AUC(y_pred, y_true, pos_group=None):
     fpr, tpr, thresholds = metrics.roc_curve(y_true=y_true, y_score=y_pred, pos_label=pos_group)
     auc_result = metrics.auc(fpr, tpr)
     return fpr, tpr, auc_result
-
 
 def plotROCAUC(df, df2, classes, micro_fpr, micro_tpr, micro_roc_auc):
     # First aggregate all false positive rates
@@ -249,12 +220,10 @@ def plotROCAUC(df, df2, classes, micro_fpr, micro_tpr, micro_roc_auc):
     plt.legend(loc="lower right")
     plt.show()
 
-
 def PR_AUC(y_pred, y_true, pos_group=None):
     avg_precision = metrics.average_precision_score(y_true=y_true, y_score=y_pred, pos_label=pos_group)
     precision, recall, thresholds = metrics.precision_recall_curve(y_true=y_true, probas_pred=y_pred, pos_label=pos_group)
     return precision, recall, avg_precision
-
 
 def plotPRAUC(df, df2, classes, y_test, y_score, micro_precision, micro_recall, micro_avg_precision):
     # honeslty I don't know if this is portable or correct...meh
@@ -291,7 +260,6 @@ def plotPRAUC(df, df2, classes, y_test, y_score, micro_precision, micro_recall, 
     plt.title('Precision-Recall to multi-class')
     plt.legend(loc="lower right")
     plt.show()
-
 
 # Learn to predict each class against the other
 def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
@@ -337,7 +305,8 @@ def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
     plotROCAUC(df, df2, classes, micro_fpr, micro_tpr, micro_roc_auc)
 
     plotPRAUC(df, df2, classes, y_test, y_score, micro_precision, micro_recall, micro_avg_precision)
-'''
+
+
 
 
 # %%
@@ -387,7 +356,6 @@ plt.clf()
 # %%
 ## Replicate Author's SVM
 # Support vector machines
-
 # TODO: Mathew: make function and try to replicate - M
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
@@ -401,13 +369,11 @@ def Authors_SVM(x_train, y_train, x_test, y_test):
     red_gamma = 2**0.19  # 1.14
     gamma = np.logspace(-3, 6, 20, 2)
     parameters = {'C':range(1,20), 'gamma':gamma}
-    # above gives best parameters: {} {'C': 2, 'gamma': 0.23357214690901212} for white
-    # best parameters: {} {'C': 19, 'gamma': 0.002976351441631319} for red
-    author_params = {'C':[3], 'gamma':[white_gamma]}
+    author_params = {'C':[3], 'gamma':[white_gamma, red_gamma]}
     svm_clf = svm.SVR(kernel='rbf')
 
 
-    clf = GridSearchCV(svm_clf, author_params, n_jobs=4, verbose=True, cv=5)
+    clf = GridSearchCV(svm_clf, parameters, n_jobs=1, verbose=True, cv=5)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -432,56 +398,10 @@ Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 
-# %%
-white_y_pred = rbf.predict(white_test_x)
-white_rbf_acc = accuracy_score(white_test_y, white_y_pred)
-white_rbf_SSE = SSE(white_test_y, white_y_pred)
-print (f" Accuracy for rbf SVM on white dataset is {white_rbf_acc}")
-print (f" SSE for rbf SVM on white dataset is {white_rbf_SSE}")
 
-models_white.append('SVM')
-accuracy_white.append(white_rbf_acc)
-SSE_white.append(white_rbf_SSE)
-
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_rbf_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
-white_rbf_df_cm.index.name = 'Actual'
-white_rbf_df_cm.columns.name = 'Predicted'
-white_rbf_cm = sns.heatmap(white_rbf_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-white_rbf_cm.tick_params(left = False, bottom = False)
-white_rbf_cm.set_title('SVM Classifier - White Wine')
-plt.show()
-plt.clf()
 
 #%%
-# rbf.fit(red_train_x,red_train_y)
-
-# red_y_pred = rbf.predict(red_test_x)
-# red_rbf_acc = accuracy_score(red_test_y, red_y_pred)
-# red_rbf_SSE = SSE(red_test_y, red_y_pred)
-# print (f" Accuracy for rbf SVM on red dataset is {red_rbf_acc}")
-# print (f" SSE for rbf SVM on red dataset is {red_rbf_SSE}")
-
-# models_red.append('SVM')
-# accuracy_red.append(red_rbf_acc)
-# SSE_red.append(red_rbf_SSE)
-
-# data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-# red_rbf_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
-# red_rbf_df_cm.index.name = 'Actual'
-# red_rbf_df_cm.columns.name = 'Predicted'
-# red_rbf_cm = sns.heatmap(red_rbf_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-# red_rbf_cm.tick_params(left = False, bottom = False)
-# red_rbf_cm.set_title('SVM Classifier - Red Wine')
-# plt.show()
-# plt.clf()
-
-
-
-
-'''# %%
 # "Base" classifiers
-
 from sklearn.linear_model import LogisticRegression as LR
 print('LogisticRegression')
 model = LR(random_state=0, n_jobs=-1)
@@ -493,7 +413,7 @@ model = RC(random_state=0)
 oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, white_labels)
 # logistic and ridge regression perform the best
 
-'''
+
 
 
 
@@ -512,9 +432,18 @@ oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_
 # TODO: Mathew: make function - M
 from sklearn.neighbors import RadiusNeighborsClassifier # this is unsupervised version
 def RNC(x_train, y_train, x_test, y_test):
-    parameters = {'weights': ['uniform', 'distance'], 'radius': np.arange(1.0, 50.0, 0.5), 'n_jobs': [2], 'outlier_label':['most_frequent'] }
+    parameters = {
+        'weights': ['uniform', 'distance'],
+        'radius': np.arange(1.0, 11.0, 0.5),
+        'n_jobs': [1],
+        'outlier_label':['most_frequent'],
+        'algorithm': ['ball_tree', 'kd_tree', 'brute']
+        }
+    best_params = {
+        'weights': ['distance'], 'radius': [2.5], 'outlier_label':['most_frequent'], 'algorithm': ['ball_tree'] 
+    }
     model = RadiusNeighborsClassifier()
-    clf = GridSearchCV(model, parameters, n_jobs=2, verbose=True, cv=5)
+    clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=5)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -533,7 +462,6 @@ def RNC(x_train, y_train, x_test, y_test):
 
     # TODO: Mathew: once we have the best parameters, maybe then we should do a special run and analysis of that model?
     
-
 RNC(white_train_x, white_train_y, white_test_x, white_test_y)
 RNC(red_train_x, red_train_y, red_test_x, red_test_y)
 
@@ -845,12 +773,16 @@ from sklearn.metrics import confusion_matrix
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 def MLP(x_train, y_train, x_test, y_test):
     parameters = {
-        'activation': ['logistic'],
+        'activation': ['logistic', 'identity', 'tanh', 'relu'],
         'alpha': [0.01, 0.001, 0.0001, 0.00001],
         'learning_rate': ['constant', 'invscaling', 'adaptive'],
+        'solver': ['lbfgs', 'sgd', 'adam'], 
         'random_state':[42],
+        'max_iter': [1000],
 
         }
+    best_param_w = {'activation': 'tanh', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
+    best_param_r = {'activation': 'relu', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
     model = MLPClassifier()
     clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=3)
     clf.fit(x_train, y_train)
