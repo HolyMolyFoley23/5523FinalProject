@@ -634,16 +634,14 @@ scores_red.append(red_tree_scores)
 # %%
 # Naive Bayes
 from sklearn.naive_bayes import GaussianNB
-def gaussian_nb(x_train, y_train, x_test, y_test):
+def gaussian_nb(x_train, y_train, x_test, y_test, color):
     gnb = GaussianNB()
     gnb.fit(x_train, y_train)
-    return gnb 
+    y_pred = gnb.predict(x_test)
+    data_analyze(y_test, y_pred, color, "GNB")
 
-white_gnb = gaussian_nb(white_train_x, white_train_y, white_test_x, white_test_y)
-data_analyze("White", white_gnb  ,"GNB")
-
-red_gnb = gaussian_nb(red_train_x, red_train_y, red_test_x, red_test_y)
-data_analyze("Red", red_gnb, "GNB")
+gaussian_nb(white_train_x, white_train_y, white_test_x, white_test_y,"White")
+gaussian_nb(red_train_x, red_train_y, red_test_x, red_test_y,"Red")
 
 
 
@@ -692,16 +690,15 @@ scores_red.append(red_knn_scores)
 #%%
 # Support vector machines
 from sklearn import svm
-def svm_function(x_train, y_train, x_test, y_test):
+def svm_function(x_train, y_train, x_test, y_test, color):
     rbf = svm.SVC(kernel = 'rbf', random_state = 42)
     rbf.fit(x_train,y_train)
+    y_pred = rbf.predict(x_test)
+    data_analyze(y_test, y_pred, color, "SVM")
     return rbf
 
-white_svm = svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
-data_analyze("White", white_svm, "SVM")
-
-red_svm = svm_function(red_train_x, red_train_y, red_test_x, red_test_y)
-data_analyze("Red", red_svm, "SVM")
+svm_function(white_train_x, white_train_y, white_test_x, white_test_y,"White")
+svm_function(red_train_x, red_train_y, red_test_x, red_test_y,"Red")
 
 
 
