@@ -448,11 +448,12 @@ from scipy import stats
 
 # TODO: X data sets for trian and test are unused
 def do_trivial(train_x, train_y, test_x, test_y, color):
-    scores = []
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
     data_analyze(test_y, pred, color, 'Trivial')
-    return pred, scores
+    return pred
 
+do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'Red')
+do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'White')
 
 
 
@@ -583,7 +584,6 @@ RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn import tree
 def do_tree(train_x, train_y, test_x, test_y, params, color):
-
     dt = tree.DecisionTreeClassifier(max_depth = params['max_depth'],
                                       max_leaf_nodes = params['max_leaf_nodes'],
                                       criterion = params['criterion'],
@@ -616,7 +616,6 @@ do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_para
 
 
 
-
 # %%
 # Naive Bayes
 from sklearn.naive_bayes import GaussianNB
@@ -638,8 +637,7 @@ gaussian_nb(red_train_x, red_train_y, red_test_x, red_test_y,"Red")
 from sklearn.neighbors import KNeighborsClassifier
 # feature selection
 # testing feature selection produced best results for using all features for both datasets   
-def do_knn(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
-    scores = []
+def do_knn(train_x, train_y, test_x, test_y, params, color):
     k = KNeighborsClassifier(n_neighbors = params['n_neighbors'],
                            weights = params['weights'])
     k.fit(train_x, train_y)
@@ -658,8 +656,9 @@ white_params = clf.best_params_
 clf.fit(red_train_x, red_train_y)
 red_params = clf.best_params_
 
-do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, metrics_list, metrics_names, 'White')
-do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params, metrics_list, metrics_names, 'Red')
+do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
+do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params,  'Red')
+
 
 
 
