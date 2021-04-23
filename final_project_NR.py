@@ -415,8 +415,9 @@ def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
 
     plotPRAUC(df, df2, classes, y_test, y_score, micro_precision, micro_recall, micro_avg_precision)
 
-
-
+# unsure if this is the way we're going to go, but including these for now. will need to add additional metrics.
+metrics_list = [accuracy_score, SSE] #classifiers will apply each of these metrics 
+metrics_names = ['Accuracy', 'SSE'] #for plotting
 
 # %%
 # trivial classifier 
