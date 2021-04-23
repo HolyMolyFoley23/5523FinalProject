@@ -338,18 +338,16 @@ def SSE(actual, pred):
 #svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
 #data_analyze("White", white_svm, "SVM")
 def data_analyze(wine_color,classifier,classifier_name):
-    labels = ""
+    labels = [4,5,6,7,8]
     if(wine_color=="Red"):
         y_pred = classifier.predict(red_test_x)
         test_y = red_test_y
-        labels = labels
         acc = accuracy_score(test_y, y_pred)
         accuracy_red.append(acc)
         SSE_red.append(SSE(test_y, y_pred))
     elif(wine_color=="White"):
         y_pred = classifier.predict(white_test_x)
         test_y = white_test_y
-        labels = labels
         acc = accuracy_score(test_y, y_pred)
         accuracy_white.append(acc)
         SSE_white.append(SSE(test_y, y_pred))
@@ -359,7 +357,9 @@ def data_analyze(wine_color,classifier,classifier_name):
     print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
     print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE}")
 
-
+    print(len(test_y))
+    print(len(y_pred))
+    print(len(labels))
     data = confusion_matrix(test_y, y_pred, labels = labels)
     df_cm = pd.DataFrame(data, columns = labels, index = labels)
     df_cm.index.name = 'Actual'
