@@ -623,51 +623,18 @@ plt.clf()
 # %%
 # Naive Bayes
 from sklearn.naive_bayes import GaussianNB
-# TODO: make function - J
-def gnb()
-gnb = GaussianNB()
-white_y_pred = gnb.fit(white_train_x, white_train_y).predict(white_test_x)
-white_gnb_acc = accuracy_score(white_test_y, white_y_pred)
-white_gnb_SSE = SSE(white_test_y, white_y_pred)
+# TODO: make function - Jack
+def gaussian_nb(x_train, y_train, x_test, y_test):
+    gnb = GaussianNB(random_state = 42)
+    gnb.fit(x_train, y_train)
+    return gnb 
 
-print (f" Accuracy for Gaussian naive Bayes on white dataset is {white_gnb_acc}")
-print (f" SSE for Gaussian naive Bayes on white dataset is {white_gnb_SSE}")
+white_gnb = gaussian_nb(white_train_x, white_train_y, white_test_x, white_test_y)
+data_analyze("White", white_gnb  ,"GNB")
 
-models_white.append('GNB')
-accuracy_white.append(white_gnb_acc)
-SSE_white.append(white_gnb_SSE)
+red_gnb = gaussian_nb(red_train_x, red_train_y, red_test_x, red_test_y)
+data_analyze("Red", red_gnb, "GNB")
 
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_gnb_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
-white_gnb_df_cm.index.name = 'Actual'
-white_gnb_df_cm.columns.name = 'Predicted'
-white_gnb_cm = sns.heatmap(white_gnb_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-white_gnb_cm.tick_params(left = False, bottom = False)
-white_gnb_cm.set_title('Gaussian Naive Bayes Classifier - White Wine')
-plt.show()
-plt.clf()
-
-#%%
-red_y_pred = gnb.fit(red_train_x, red_train_y).predict(red_test_x)
-red_gnb_acc = accuracy_score(red_test_y, red_y_pred)
-red_gnb_SSE = SSE(red_test_y, red_y_pred)
-
-print (f" Accuracy for Gaussian naive Bayes on red dataset is {red_gnb_acc}")
-print (f" SSE for Gaussian naive Bayes on red dataset is {red_dectree_SSE}")
-
-models_red.append('GNB')
-accuracy_red.append(red_gnb_acc)
-SSE_red.append(red_gnb_SSE)
-
-data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-red_gnb_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
-red_gnb_df_cm.index.name = 'Actual'
-red_gnb_df_cm.columns.name = 'Predicted'
-red_gnb_cm = sns.heatmap(red_gnb_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-red_gnb_cm.tick_params(left = False, bottom = False)
-red_gnb_cm.set_title('Gaussian Naive Bayes Classifier - Red Wine')
-plt.show()
-plt.clf()
 
 
 
