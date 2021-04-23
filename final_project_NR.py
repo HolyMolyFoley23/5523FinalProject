@@ -71,9 +71,9 @@ def do_knn(train_x, train_y, test_x, test_y, params, color):
 
 def do_tree(train_x, train_y, test_x, test_y, params, color):
     scores = []
-    dt = tree.DecisionTreeClassifier(max_depth = white_params['max_depth'],
-                                      max_leaf_nodes = white_params['max_leaf_nodes'],
-                                      criterion = white_params['criterion'],
+    dt = tree.DecisionTreeClassifier(max_depth = params['max_depth'],
+                                      max_leaf_nodes = params['max_leaf_nodes'],
+                                      criterion = params['criterion'],
                                       random_state = 42)
     d = dt.fit(train_x, train_y)
     pred = d.predict(test_x)
