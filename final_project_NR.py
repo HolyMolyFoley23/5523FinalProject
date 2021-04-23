@@ -262,21 +262,26 @@ def confusion(test, pred, labels, title):
     plt.show()
     plt.clf()
 
-def plot_metrics(df_scores, models, color):
+def plot_metrics(df, metric, color):
     sns.set(style="whitegrid")
     sns.despine(left=True)
-    for column in df_scores.columns:
-         plot = sns.barplot(y = df_scores[column], x = models)
-         plt.title(f'Classification {column} - {color} Wine dataset')
-         for p in plot.patches:
-             plot.annotate(format(p.get_height(), '0.5f'),
-                           (p.get_x() + p.get_width()/2, p.get_height()), 
-                            ha = 'center', va = 'center',
-                            xytext = (0,-20), 
-                            textcoords = 'offset points', color = 'white')
-         plt.show()
-         plt.clf()
-
+    d = df[(df.Color==color)]
+    print(d)
+    plot = sns.barplot(x=d['Classifier'], y=d[metric])
+    plt.title(f'Classification {metric} - {color} Wine dataset')
+    if metric == 'SSE':
+        fmt = '0.0f'
+    else:
+        fmt = '0.5f'
+    for p in plot.patches:
+        plot.annotate(format(p.get_height(), fmt),
+                      (p.get_x() + p.get_width()/2, p.get_height()), 
+                       ha = 'center', va = 'center',
+                       xytext = (0,-20), 
+                       textcoords = 'offset points', color = 'white')
+    plt.show()
+    plt.clf()
+    
 # defining SSE
 def SSE(actual, pred):
     s = 0
@@ -429,9 +434,7 @@ def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
 
     plotPRAUC(df, df2, classes, y_test, y_score, micro_precision, micro_recall, micro_avg_precision)
 
-# unsure if this is the way we're going to go, but including these for now. will need to add additional metrics.
-metrics_list = [accuracy_score, SSE] #classifiers will apply each of these metrics 
-metrics_names = ['Accuracy', 'SSE'] #for plotting
+
 
 
 
@@ -444,22 +447,12 @@ metrics_names = ['Accuracy', 'SSE'] #for plotting
 from scipy import stats
 
 # TODO: X data sets for trian and test are unused
-def do_trivial(train_x, train_y, test_x, test_y, metrics_list, metrics_names, color):
+def do_trivial(train_x, train_y, test_x, test_y, color):
     scores = []
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
-    for i in range(len(metrics_list)):
-        scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for trivial classifier on {color.lower()} dataset is {scores[i]}.")
-    confusion(test_y, pred, labels=labels,
-          title=f'Trivial Classifer - {color} Wine')
+    data_analyze(test_y, pred, color, 'Trivial')
     return pred, scores
 
-white_trivial_pred, white_trivial_scores = do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, metrics_list, metrics_names, 'white')
-red_trivial_pred, red_trivial_scores = do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, metrics_list, metrics_names, 'red')
-
-models.append('Trivial')
-scores_white.append(white_trivial_scores)
-scores_red.append(red_trivial_scores)
 
 
 
@@ -589,20 +582,16 @@ RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 # Decision tree
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn import tree
-def do_tree(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
-    scores = []
+def do_tree(train_x, train_y, test_x, test_y, params, color):
+
     dt = tree.DecisionTreeClassifier(max_depth = params['max_depth'],
                                       max_leaf_nodes = params['max_leaf_nodes'],
                                       criterion = params['criterion'],
                                       random_state = 42)
     d = dt.fit(train_x, train_y)
     pred = d.predict(test_x)
-    for i in range(len(metrics_list)):
-        scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for decision tree classifier on {color.lower()} dataset is {scores[i]}.")
-    confusion(test_y, pred, labels=labels,
-          title=f"Decision tree classifier - {color} Wine")
-    return pred, scores
+    data_analyze(test_y, pred, color, 'DT')
+    return pred
 
 # feature selection
 # testing number of features yielded n=5 as ideal number of features for red; using all features was ideal for white
@@ -619,12 +608,9 @@ white_params = clf.best_params_
 clf.fit(red_train_selected, red_train_y)
 red_params = clf.best_params_
 
-white_tree_pred, white_tree_scores = do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, metrics_list, metrics_names, 'White')
-red_tree_pred, red_tree_scores = do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, metrics_list, metrics_names, 'Red')
+do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
+do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, 'Red')
 
-models.append('DT')
-scores_white.append(white_tree_scores)
-scores_red.append(red_tree_scores)
 
 
 
@@ -658,12 +644,8 @@ def do_knn(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names
                            weights = params['weights'])
     k.fit(train_x, train_y)
     pred = k.predict(test_x)
-    for i in range(len(metrics_list)):
-        scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for {params['n_neighbors']}-NN classifier on {color.lower()} dataset is {scores[i]}.")
-    confusion(test_y, pred, labels=labels,
-          title=f"{params['n_neighbors']}-NN - {color} Wine")
-    return pred, scores
+    data_analyze(test_y, pred, color, 'KNN')
+    return pred
 
 
 parameters = {'n_neighbors':range(1,20), 'weights':['uniform', 'distance']}
@@ -676,12 +658,9 @@ white_params = clf.best_params_
 clf.fit(red_train_x, red_train_y)
 red_params = clf.best_params_
 
-white_knn_pred, white_knn_scores = do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, metrics_list, metrics_names, 'white')
-red_knn_pred, red_knn_scores = do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params, metrics_list, metrics_names, 'red')
+do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, metrics_list, metrics_names, 'White')
+do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params, metrics_list, metrics_names, 'Red')
 
-models.append('KNN')
-scores_white.append(white_knn_scores)
-scores_red.append(red_knn_scores)
 
 
 
@@ -773,11 +752,8 @@ MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 # Plotting performance
 # bar graphs to compare performance of classifiers
 
-df_scores_white = pd.DataFrame(scores_white, columns = metrics_names, index = models)
-df_scores_red = pd.DataFrame(scores_red, columns = metrics_names, index = models)
+plot_metrics(scores_df, 'Accuracy', 'White')
 
-plot_metrics(df_scores_white, models, 'White')
-plot_metrics(df_scores_red, models, 'Red')
 
 
 
