@@ -625,7 +625,7 @@ plt.clf()
 from sklearn.naive_bayes import GaussianNB
 # TODO: make function - Jack
 def gaussian_nb(x_train, y_train, x_test, y_test):
-    gnb = GaussianNB(random_state = 42)
+    gnb = GaussianNB()
     gnb.fit(x_train, y_train)
     return gnb 
 
