@@ -15,12 +15,7 @@ from sklearn.preprocessing import StandardScaler
 data_path = r'winequalityN.csv'
 wine = pd.read_csv(data_path)
 
-'''Some things to consider from the paper...
-SVM relative importance plots for attributes?
-“We will adopt a regression approach, which preserves the order of the preferences.
-For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7.”'''
 
-# %% 
 ## Defining functions
 from sklearn.feature_selection import SelectKBest
 
@@ -58,9 +53,8 @@ def plot_metrics(df_scores, models, color):
          plt.show()
          plt.clf()
     
-# %%
-## Classifier functions
 
+## Classifier functions
 def do_trivial(train_x, train_y, test_x, test_y, metrics_list, metrics_names, color):
     scores = []
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
@@ -256,9 +250,13 @@ plt.clf()
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import precision_score
 from sklearn.manifold import TSNE
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
 from sklearn.preprocessing import StandardScaler
+
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
 labels = [4, 5, 6, 7, 8]
@@ -281,7 +279,6 @@ white_test_y = white_test_y.to_numpy()
 # creating index of features
 features = white_train_x.columns
 
-# TODO: standardized to a zero mean and one standard deviation for input attr - N
 # standardizing feature values
 scaler = StandardScaler()
 white_train_x = scaler.fit_transform(white_train_x)
@@ -300,7 +297,6 @@ models_red = []
 accuracy_red = []
 SSE_red = []
 
-# TODO: 2D representation of classifier splitting data - J
 
 # %%
 #perplexity = 50 for white test data perplexity = 20 for red test data
@@ -328,7 +324,6 @@ two_dimensional_representation(white_test_x,white_test_y,"White actual",50)
 
 
 #%%
-
 # defining SSE
 def SSE(actual, pred):
     s = 0
@@ -514,33 +509,33 @@ models.append('Trivial')
 scores_white.append(white_trivial_scores)
 scores_red.append(red_trivial_scores)
 
-#%%
-#import metrics
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import precision_score
-from sklearn.metrics import confusion_matrix
-
 
 # %%
 ## Replicate Author's SVM
 # Support vector machines
-# TODO: Mathew: make function and try to replicate - M
-from sklearn import svm
-from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVR
 np.set_printoptions(precision=4)
-def Authors_SVM(x_train, y_train, x_test, y_test):
+def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
     # using gamma values that the authors found were the best
     white_gamma = 2**1.55  # 2.928
     red_gamma = 2**0.19  # 1.14
     gamma = np.logspace(-3, 6, 20, 2)
-    parameters = {'C':range(1,20), 'gamma':gamma}
+    grid_search = {'C':range(1,20), 'gamma':gamma}
     best_w = {'C': 2, 'gamma': 0.6951927961775606}
     best_r = {'C': 1, 'gamma': 0.07847599703514611}
     author_params = {'C':[3], 'gamma':[white_gamma, red_gamma]}
-    svm_clf = svm.SVR(kernel='rbf')
+    svm_clf = SVR(kernel='rbf')
+    param = None
+    if ds_type == 'white': 
+        param = best_w
+    elif ds_type == 'red':
+        param = best_r
+    elif ds_type == 'authors':
+        param = author_params
+    else:
+        param = grid_search
 
-
-    clf = GridSearchCV(svm_clf, parameters, n_jobs=1, verbose=True, cv=5)
+    clf = GridSearchCV(svm_clf, param, n_jobs=1, verbose=True, cv=5)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -560,8 +555,8 @@ def Authors_SVM(x_train, y_train, x_test, y_test):
     # from sklearn.metrics import classification_report
     
 
-Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y)
-Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y)
+Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
+Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
@@ -745,7 +740,6 @@ scores_red.append(red_knn_scores)
 #%%
 # Support vector machines
 from sklearn import svm
-# TODO: make function - J
 def svm_function(x_train, y_train, x_test, y_test):
     rbf = svm.SVC(kernel = 'rbf', random_state = 42)
     rbf.fit(x_train,y_train)
@@ -762,49 +756,7 @@ data_analyze("Red", red_svm, "SVM")
 
 # %%
 # Neural network - might not have great performance
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import precision_score
-from sklearn.metrics import confusion_matrix
-from sklearn.neural_network import MLPClassifier, MLPRegressor
-def MLP_Classifier(x_train, y_train, x_test, y_test, ds_type=None):
-    grid_search = {
-        'activation': ['logistic', 'identity', 'tanh', 'relu'],
-        'alpha': [0.01, 0.001, 0.0001, 0.00001],
-        'learning_rate': ['constant', 'invscaling', 'adaptive'],
-        'solver': ['lbfgs', 'sgd', 'adam'], 
-        'random_state':[42],
-        'max_iter': [1000],
-        }
-    best_w = {'activation': ['logistic'], 'alpha': [1e-05], 'learning_rate': ['constant'], 'solver': ['lbfgs'], 'random_state': [42], 'max_iter': [100000]}
-    best_r = {'activation': ['logistic'], 'alpha': [0.0001], 'learning_rate': ['constant'], 'solver': ['adam'], 'random_state': [42], 'max_iter': [100000]}
-    model = MLPClassifier()
-    param = None
-    if ds_type == 'white': 
-        param = best_w
-    elif ds_type == 'red':
-        param = best_r
-    else:
-        param = grid_search
-    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=5)
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
-
-    print('best parameters: {}', clf.best_params_)
-    print('best score: {}', clf.best_score_)
-    print("MAE: {}", mean_absolute_error(y_test, y_pred))
-
-    # print confusion matrix
-    conf = confusion_matrix(y_test, y_pred)
-    print(conf)
-    
-    # get precision scores
-    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
-    print(prec_w)
-    
-MLP_Classifier(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
-MLP_Classifier(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
-
+from sklearn.neural_network import MLPRegressor
 def MLP_Regressor(x_train, y_train, x_test, y_test, ds_type=None):
     grid_search = {
         'activation': ['logistic', 'identity', 'tanh', 'relu'],
