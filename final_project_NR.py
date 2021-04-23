@@ -32,6 +32,58 @@ def FeatureSelection(k, df, x_train, y_train, x_test, y_test):
     test_selected = SelectKBest(k=k).fit_transform(x_test, y_test)
     return train_selected, test_selected, selected_features
 
+def confusion(test, pred, labels, title):
+    d = confusion_matrix(test, pred, labels = labels)
+    df_cm = pd.DataFrame(d, columns = labels, index = labels)
+    df_cm.columns.name = 'Predicted'
+    df_cm.index.name = 'Actual'
+    cm = sns.heatmap(df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
+    cm.tick_params(left = False, bottom = False)
+    cm.set_title(title)
+    plt.show()
+    plt.clf()
+    
+# %%
+## Classifier functions
+
+def do_trivial(train_x, train_y, test_x, test_y, color):
+    scores = []
+    pred = np.full(test_y.shape, stats.mode(train_y)[0])
+    for i in range(len(metrics_list)):
+        scores.append(metrics_list[i](test_y, pred)) 
+        print(f" {metrics_names[i]} for trivial classifier on {color} dataset is {scores[i]}.")
+    confusion(test_y, pred, labels=labels,
+          title=f'Trivial Classifer - {color} wine')
+    return pred, scores
+
+def do_knn(train_x, train_y, test_x, test_y, params, color):
+    scores = []
+    k = KNeighborsClassifier(n_neighbors = params['n_neighbors'],
+                           weights = params['weights'])
+    k.fit(train_x, train_y)
+    pred = k.predict(test_x)
+    for i in range(len(metrics_list)):
+        scores.append(metrics_list[i](test_y, pred)) 
+        print(f" {metrics_names[i]} for {params['n_neighbors']}-NN classifier on {color} dataset is {scores[i]}.")
+    confusion(test_y, pred, labels=labels,
+          title=f"{params['n_neighbors']}-NN - {color} wine")
+    return pred, scores
+
+def do_tree(train_x, train_y, test_x, test_y, params, color):
+    scores = []
+    dt = tree.DecisionTreeClassifier(max_depth = white_params['max_depth'],
+                                      max_leaf_nodes = white_params['max_leaf_nodes'],
+                                      criterion = white_params['criterion'],
+                                      random_state = 42)
+    d = dt.fit(train_x, train_y)
+    pred = d.predict(test_x)
+    for i in range(len(metrics_list)):
+        scores.append(metrics_list[i](test_y, pred)) 
+        print(f" {metrics_names[i]} for decision tree classifier on {color} dataset is {scores[i]}.")
+    confusion(test_y, pred, labels=labels,
+          title=f"Decision tree classifier - {color} wine")
+    return pred, scores
+              
 # %%
 ## Data preprocessing and cleaning
 
@@ -85,7 +137,7 @@ print(red.info())
 plt.title('Histogram of White Wine Quality')
 plt.xlabel('Quality')
 plt.ylabel('Count')
-plt.hist(white['quality'], bins=[3,4,5,6,7,8,9,10])
+plt.hist(white['quality'], bins=[4,5,6,7,8])
 sns.set(style="whitegrid")
 plt.show()
 plt.clf()
@@ -93,7 +145,7 @@ plt.clf()
 plt.title('Histogram of Red Wine Quality')
 plt.xlabel('Quality')
 plt.ylabel('Count')
-plt.hist(red['quality'], bins=[3,4,5,6,7,8,9])
+plt.hist(red['quality'], bins=[4,5,6,7,8])
 sns.set(style="whitegrid")
 plt.show()
 plt.clf()
@@ -123,6 +175,7 @@ plt.clf()
 
 # It eventually won't matter when we do k-fold cross validation
 # but it can easily be adjusted for preliminary models with test_size=0.33
+from sklearn import metrics
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
@@ -130,8 +183,7 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
-white_labels = [4, 5, 6, 7, 8]
-red_labels = [4, 5, 6, 7, 8]
+labels = [4, 5, 6, 7, 8]
 test_size = 0.33
 
 # Red wine
@@ -147,6 +199,9 @@ white_y = white['quality']
 white_train_x, white_test_x, white_train_y, white_test_y = train_test_split(white_x, white_y, test_size=test_size, random_state=42, shuffle=True, stratify=white_y)
 white_train_y = white_train_y.to_numpy()
 white_test_y = white_test_y.to_numpy()
+              
+# creating index of features
+features = white_train_x.columns
 
 # TODO: standardized to a zero mean and one standard deviation for input attr - N
 # standardizing feature values
@@ -157,6 +212,9 @@ red_train_x = scaler.fit_transform(red_train_x)
 red_test_x = scaler.fit_transform(red_test_x)
 
 # Models and metrics lists for later plotting/comparison
+models = []
+scores_white = []  
+scores_red = []
 models_white = []
 accuracy_white = []
 SSE_white = []
@@ -206,14 +264,14 @@ def data_analyze(wine_color,classifier,classifier_name):
     if(wine_color=="Red"):
         y_pred = classifier.predict(red_test_x)
         test_y = red_test_y
-        labels = red_labels
+        labels = labels
         acc = accuracy_score(test_y, y_pred)
         accuracy_red.append(acc)
         SSE_red.append(SSE(test_y, y_pred))
     elif(wine_color=="White"):
         y_pred = classifier.predict(white_test_x)
         test_y = white_test_y
-        labels = white_labels
+        labels = labels
         acc = accuracy_score(test_y, y_pred)
         accuracy_white.append(acc)
         SSE_white.append(SSE(test_y, y_pred))
@@ -367,39 +425,12 @@ def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
 # TODO: make function - N
 from scipy import stats
 
-white_y_pred = np.full(white_test_y.shape, stats.mode(white_train_y)[0]) # need to change these to the modes of the training sets
-red_y_pred = np.full(red_test_y.shape, stats.mode(red_train_y)[0])
+white_trivial_pred, white_trivial_scores = do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
+red_trivial_pred, red_trivial_scores = do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
-white_trivial_acc = accuracy_score(white_test_y, white_y_pred)
-red_trivial_acc = accuracy_score(red_test_y, red_y_pred)
-white_trivial_SSE = SSE(white_test_y, white_y_pred)
-red_trivial_SSE = SSE(red_test_y, red_y_pred)
-
-print (f" Accuracy for trivial classifier on white dataset is {white_trivial_acc}")
-print (f" SSE for trivial classifier on white dataset is {white_trivial_SSE}")
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_trivial_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
-white_trivial_df_cm.index.name = 'Actual'
-white_trivial_df_cm.columns.name = 'Predicted'
-white_trivial_cm = sns.heatmap(white_trivial_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-white_trivial_cm.tick_params(left = False, bottom = False)
-white_trivial_cm.set_title('Trivial Classifier - White Wine')
-white_trivial_cm
-plt.show()
-plt.clf()
-
-print (f" Accuracy for trivial classifier on red dataset is {red_trivial_acc}")
-print (f" SSE for trivial classifier on red dataset is {red_trivial_SSE}")
-data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-red_trivial_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
-red_trivial_df_cm.index.name = 'Actual'
-red_trivial_df_cm.columns.name = 'Predicted'
-red_trivial_cm = sns.heatmap(red_trivial_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-red_trivial_cm.tick_params(left = False, bottom = False)
-red_trivial_cm.set_title('Trivial Classifier - Red Wine')
-red_trivial_cm
-plt.show()
-plt.clf()
+models.append('Trivial')
+scores_white.append(white_trivial_scores)
+scores_red.append(red_trivial_scores)
 
 #%%
 #import metrics
@@ -459,12 +490,12 @@ Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y)
 from sklearn.linear_model import LogisticRegression as LR
 print('LogisticRegression')
 model = LR(random_state=0, n_jobs=-1)
-oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, white_labels)
+oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, labels)
 
 from sklearn.linear_model import RidgeClassifier as RC
 print('RidgeClassifier')
 model = RC(random_state=0)
-oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, white_labels)
+oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, labels)
 # logistic and ridge regression perform the best
 
 
@@ -544,57 +575,27 @@ RNC(red_train_x, red_train_y, red_test_x, red_test_y)
 ## Supervised Learning
 # %%
 # Decision tree
+from sklearn.model_selection import RandomizedSearchCV
+              
 from sklearn import tree
-# TODO: make function - N
-dectree = tree.DecisionTreeClassifier(max_depth = 10, random_state = 42)
 
-white_dectree = dectree.fit(white_train_x, white_train_y)
+parameters = {'max_depth':range(1,1000), 'criterion' :['gini', 'entropy'],
+              'max_leaf_nodes':range(1,1000)}
+dt = tree.DecisionTreeClassifier(random_state = 42)
+clf = RandomizedSearchCV(dt, parameters, n_jobs=1, n_iter=10, verbose=True, random_state=42, cv=3)
 
-#white_tree = tree.plot_tree(white_dectree)
-white_y_pred = white_dectree.predict(white_test_x)
-white_dectree_acc = accuracy_score(white_test_y, white_y_pred)
-white_dectree_SSE = SSE(white_test_y, white_y_pred)
+clf.fit(white_train_x, white_train_y)
+white_params = clf.best_params_
 
-print (f" Accuracy for decision tree on white dataset is {white_dectree_acc}")
-print (f" SSE for decision tree on white dataset is {white_dectree_SSE}")
+clf.fit(red_train_x, red_train_y)
+red_params = clf.best_params_
 
-models_white.append('DT')
-accuracy_white.append(white_dectree_acc)
-SSE_white.append(white_dectree_SSE)
+white_tree_pred, white_tree_scores = do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'white')
+red_tree_pred, red_tree_scores = do_tree(red_train_x, red_train_y, red_test_x, red_test_y, red_params, 'red')
 
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_tree_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
-white_tree_df_cm.index.name = 'Actual'
-white_tree_df_cm.columns.name = 'Predicted'
-white_tree_cm = sns.heatmap(white_tree_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-white_tree_cm.tick_params(left = False, bottom = False)
-white_tree_cm.set_title('Decision Tree Classifier - White Wine')
-plt.show()
-plt.clf()
-
-# %%
-red_dectree = dectree.fit(red_train_x, red_train_y)
-#red_tree = tree.plot_tree(red_dectree)
-red_y_pred = red_dectree.predict(red_test_x)
-red_dectree_acc = accuracy_score(red_test_y, red_y_pred)
-red_dectree_SSE = SSE(red_test_y, red_y_pred)
-
-print (f" Accuracy for decision tree on red dataset is {red_dectree_acc}")
-print (f" SSE for decision tree on red dataset is {red_dectree_SSE}")
-
-models_red.append('DT')
-accuracy_red.append(red_dectree_acc)
-SSE_red.append(white_dectree_SSE)
-
-data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-red_tree_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
-red_tree_df_cm.index.name = 'Actual'
-red_tree_df_cm.columns.name = 'Predicted'
-red_tree_cm = sns.heatmap(red_tree_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-red_tree_cm.tick_params(left = False, bottom = False)
-red_tree_cm.set_title('Decision Tree Classifier - Red Wine')
-plt.show()
-plt.clf()
+models.append('DT')
+scores_white.append(white_tree_scores)
+scores_red.append(red_tree_scores)
 
 
 
@@ -618,8 +619,8 @@ models_white.append('GNB')
 accuracy_white.append(white_gnb_acc)
 SSE_white.append(white_gnb_SSE)
 
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_gnb_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
+data = confusion_matrix(white_test_y, white_y_pred, labels = labels)
+white_gnb_df_cm = pd.DataFrame(data, columns = labels, index = labels)
 white_gnb_df_cm.index.name = 'Actual'
 white_gnb_df_cm.columns.name = 'Predicted'
 white_gnb_cm = sns.heatmap(white_gnb_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
@@ -634,14 +635,14 @@ red_gnb_acc = accuracy_score(red_test_y, red_y_pred)
 red_gnb_SSE = SSE(red_test_y, red_y_pred)
 
 print (f" Accuracy for Gaussian naive Bayes on red dataset is {red_gnb_acc}")
-print (f" SSE for Gaussian naive Bayes on red dataset is {red_dectree_SSE}")
+print (f" SSE for Gaussian naive Bayes on red dataset is {red_gnb_SSE}")
 
 models_red.append('GNB')
 accuracy_red.append(red_gnb_acc)
 SSE_red.append(red_gnb_SSE)
 
-data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-red_gnb_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
+data = confusion_matrix(red_test_y, red_y_pred, labels = labels)
+red_gnb_df_cm = pd.DataFrame(data, columns = labels, index = labels)
 red_gnb_df_cm.index.name = 'Actual'
 red_gnb_df_cm.columns.name = 'Predicted'
 red_gnb_cm = sns.heatmap(red_gnb_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
@@ -660,127 +661,22 @@ plt.clf()
 # TODO: make function - N baby
 #What N?
 # maybe total classes -1 Play around a little
-white_k = []
-white_knn_accs = []
-white_knn_SSEs = []
+parameters = {'n_neighbors':range(1,20), 'weights':['uniform', 'distance']}
+knn = KNeighborsClassifier()
+clf = GridSearchCV(knn, parameters, scoring='precision_micro', n_jobs=1, verbose=True, cv=3)
 
-scaler = StandardScaler()
-scaled_white_train_x = scaler.fit_transform(white_train_x)
-scaled_white_test_x = scaler.fit_transform(white_test_x)
+clf.fit(white_train_x, white_train_y)
+white_params = clf.best_params_
 
-for i in range(1, 21):
-    knn = KNeighborsClassifier(n_neighbors = i)
-    knn.fit(scaled_white_train_x,white_train_y)
-    knn_pred = knn.predict(scaled_white_test_x)
-    acc = accuracy_score(white_test_y, knn_pred)
-    s = SSE(white_test_y, knn_pred)
-    white_k.append(i)
-    white_knn_accs.append(acc)
-    white_knn_SSEs.append(s)
+clf.fit(red_train_x, red_train_y)
+red_params = clf.best_params_
 
-plt.plot(white_k, white_knn_accs)
-plt.xlabel('k')
-plt.ylabel('Accuracy')
-plt.title('Accuracy for Different Values of k - White Wine')
-plt.xticks([1,5,10,15,20])
-plt.yticks([0.5, 0.55, 0.6, 0.65])
-plt.show()
-plt.clf()
+white_knn_pred, white_knn_scores = do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'white')
+red_knn_pred, red_knn_scores = do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params, 'red')
 
-plt.plot(white_k, white_knn_SSEs)
-plt.xlabel('k')
-plt.ylabel('SSE')
-plt.title('SSE for Different Values of k - White Wine')
-plt.xticks([1,5,10,15,20])
-plt.show()
-plt.clf()
-# k=1 performs best
-
-knn = KNeighborsClassifier(n_neighbors = 1)
-knn.fit(scaled_white_train_x,white_train_y)
-white_y_pred = knn.predict(scaled_white_test_x)
-white_knn_acc = accuracy_score(white_test_y, white_y_pred)
-white_knn_SSE = SSE(white_test_y, white_y_pred)
-print (f" Accuracy for 1-NN on white dataset is {white_knn_acc}")
-print (f" SSE for 1-NN on white dataset is {white_knn_SSE}")
-
-models_white.append('KNN')
-accuracy_white.append(white_knn_acc)
-SSE_white.append(white_knn_SSE)
-
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_knn_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
-white_knn_df_cm.index.name = 'Actual'
-white_knn_df_cm.columns.name = 'Predicted'
-white_knn_cm = sns.heatmap(white_knn_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-white_knn_cm.tick_params(left = False, bottom = False)
-white_knn_cm.set_title('1-NN Classifier - White Wine')
-plt.show()
-plt.clf()
-
-# %%
-red_k = []
-red_knn_accs = []
-red_knn_SSEs = []
-
-scaled_red_train_x = scaler.fit_transform(red_train_x)
-scaled_red_test_x = scaler.fit_transform(red_test_x)
-
-for i in range(1, 21):
-    knn = KNeighborsClassifier(n_neighbors = i)
-    knn.fit(scaled_red_train_x,red_train_y)
-    knn_pred = knn.predict(scaled_red_test_x)
-    acc = accuracy_score(red_test_y, knn_pred)
-    s = SSE(red_test_y, knn_pred)
-    red_k.append(i)
-    red_knn_accs.append(acc)
-    red_knn_SSEs.append(s)
-
-plt.plot(red_k, red_knn_accs)
-plt.title('Accuracy for Different Values of k - Red Wine')
-plt.xlabel('k')
-plt.ylabel('Accuracy')
-plt.xticks([1,5,10,15,20])
-plt.yticks([0.5, 0.55, 0.6, 0.65])
-#plt.yticks([0.52,0.53,0.54,0.55,0.56,0.57, 0.58, 0.59, 0.60,0.61,0.62,0.63])
-plt.show()
-plt.clf()
-# k=1 and k = 4 perform best--using k=1 for consistency w/ white wine KNN
-
-plt.plot(red_k, red_knn_SSEs)
-plt.xlabel('k')
-plt.ylabel('SSE')
-plt.title('SSE for Different Values of k - Red Wine')
-plt.xticks([1,5,10,15,20])
-plt.show()
-plt.clf()
-
-knn = KNeighborsClassifier(n_neighbors = 1)
-knn.fit(scaled_red_train_x,red_train_y)
-red_y_pred = knn.predict(scaled_red_test_x)
-red_knn_acc = accuracy_score(red_test_y, red_y_pred)
-red_knn_SSE = SSE(red_test_y, red_y_pred)
-print (f" Accuracy for 1-NN on red dataset is {red_knn_acc}")
-print (f" SSE for 1-NN on red dataset is {red_knn_SSE}")
-
-models_red.append('KNN')
-accuracy_red.append(red_knn_acc)
-SSE_red.append(red_knn_SSE)
-
-data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-red_knn_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
-red_knn_df_cm.index.name = 'Actual'
-red_knn_df_cm.columns.name = 'Predicted'
-red_knn_cm = sns.heatmap(red_knn_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-red_knn_cm.tick_params(left = False, bottom = False)
-red_knn_cm.set_title('1-NN Classifier - Red Wine')
-plt.show()
-plt.clf()
-
-
-
-
-
+models.append('KNN')
+scores_white.append(white_knn_scores)
+scores_red.append(red_knn_scores)
 
 #%%
 # Support vector machines
@@ -848,7 +744,22 @@ MLP(red_train_x, red_train_y, red_test_x, red_test_y)
 # %%
 # ## feature selection
 # TODO: make function, maybe use PCA? - N
+# %%
+from sklearn.decomposition import PCA
 
+pca = PCA(n_components = 2, random_state = 42)
+white_reduced = pca.fit_transform(white_train_x)
+white_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
+print(white_pca)
+
+red_reduced = pca.fit_transform(red_train_x)
+red_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
+print(red_pca)
+
+# ChooseKBest feature selection - we should play around with this
+no_features = 3
+white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 
@@ -857,61 +768,7 @@ MLP(red_train_x, red_train_y, red_test_x, red_test_y)
 # TODO: clean up, make function - N
 # bar graphs to compare performance of classifiers
 
-data = pd.DataFrame(list(zip(models_white, accuracy_white)), 
-               columns =['Model', 'Accuracy'])
 
-sns.barplot(data=data, x="Model", y="Accuracy")
-sns.set(style="whitegrid")
-sns.despine(left=True)
-plt.title('Classification Accuracy - White Wine')
-for i in range(len(accuracy_white)+1):
-    plt.text(x=i-1, y=0.05, s=format(accuracy_white[i-1], '1f'), 
-                 color='#FFFFFF', fontsize=13, horizontalalignment='center')
-plt.axhline(y = white_trivial_acc, color='k', linestyle="--")
-plt.ylim(0,0.7)
-plt.show()
-plt.clf()
-data = pd.DataFrame(list(zip(models_red, accuracy_red)), 
-               columns =['Model', 'Accuracy'])
-
-sns.barplot(data=data, x="Model", y="Accuracy")
-sns.set(style="whitegrid")
-sns.despine(left=True)
-plt.title('Classification Accuracy - Red Wine')
-for i in range(len(accuracy_red)+1):
-    plt.text(x=i-1, y=0.05, s=format(accuracy_red[i-1], '1f'), 
-                 color='#FFFFFF', fontsize=13, horizontalalignment='center')
-plt.axhline(y = red_trivial_acc, color='k', linestyle="--")
-plt.ylim(0,0.7)
-plt.show()
-plt.clf()
-
-data = pd.DataFrame(list(zip(models_white, SSE_white)), 
-               columns =['Model', 'SSE'])
-
-sns.barplot(data=data, x="Model", y="SSE")
-sns.set(style="whitegrid")
-sns.despine(left=True)
-plt.title('Classification SSE - White Wine')
-for i in range(len(SSE_white)+1):
-    plt.text(x=i-1, y=100, s=format(SSE_white[i-1], 'o'), 
-                 color='#FFFFFF', fontsize=13, horizontalalignment='center')
-plt.axhline(y = white_trivial_SSE, color='k', linestyle="--")
-plt.show()
-plt.clf()
-data = pd.DataFrame(list(zip(models_red, SSE_red)), 
-               columns =['Model', 'SSE'])
-
-sns.barplot(data=data, x="Model", y="SSE")
-sns.set(style="whitegrid")
-sns.despine(left=True)
-plt.title('Classification SSE - Red Wine')
-for i in range(len(SSE_red)+1):
-    plt.text(x=i-1, y=100, s=format(SSE_red[i-1], 'o'), 
-                 color='#FFFFFF', fontsize=13, horizontalalignment='center')
-plt.axhline(y = red_trivial_SSE, color='k', linestyle="--")
-plt.show()
-plt.clf()
 
 
 ### Misearble Analysis
