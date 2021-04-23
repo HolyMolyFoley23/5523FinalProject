@@ -246,6 +246,9 @@ def two_dimensional_representation(x_data,y_data,title="t-SNE wine",perplexity =
 
 two_dimensional_representation(red_test_x,red_test_y,"Red actual",20)
 two_dimensional_representation(white_test_x,white_test_y,"White actual",50)
+
+
+
 #%%
 
 # defining SSE
@@ -277,7 +280,7 @@ def data_analyze(wine_color,classifier,classifier_name):
         SSE_white.append(SSE(test_y, y_pred))
     else:
         print("Bad Wine Color")
-        raise
+        #raise
     print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
     print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE}")
 
@@ -533,12 +536,15 @@ def K_means(x_train, y_train, x_test, y_test, title = "Wine"):
 K_means(white_train_x, white_train_y, white_test_x, white_test_y,"white wine")
 K_means(red_train_x, red_train_y, red_test_x, red_test_y,"red wine")
 
+
+
+
+
 # %%
 # Nearest Neighbors, the unsupervised version doesn't allow for classification
-# TODO: Mathew: make function - M
 from sklearn.neighbors import RadiusNeighborsClassifier
-def RNC(x_train, y_train, x_test, y_test):
-    parameters = {
+def RNC(x_train, y_train, x_test, y_test, ds_type=None):
+    grid_search = {
         'weights': ['uniform', 'distance'],
         'radius': np.arange(1.0, 11.0, 0.5),
         'n_jobs': [1],
@@ -547,8 +553,15 @@ def RNC(x_train, y_train, x_test, y_test):
         }
     best_w = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
     best_r = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
+    param=None
+    if ds_type == 'white':
+        param = best_w
+    elif ds_type == 'red':
+        param = best_r
+    else:
+        param = grid_search
     model = RadiusNeighborsClassifier()
-    clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=3)
+    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=3)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -564,11 +577,9 @@ def RNC(x_train, y_train, x_test, y_test):
     # get precision scores
     prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
     print(prec_w)
-
-    # TODO: Mathew: once we have the best parameters, maybe then we should do a special run and analysis of that model?
     
-RNC(white_train_x, white_train_y, white_test_x, white_test_y)
-RNC(red_train_x, red_train_y, red_test_x, red_test_y)
+RNC(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
+RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
@@ -622,7 +633,6 @@ data_analyze("Red", red_gnb, "GNB")
 
 
 
-
 #%%
 # K-nearest neighbor
 
@@ -646,6 +656,10 @@ models.append('KNN')
 scores_white.append(white_knn_scores)
 scores_red.append(red_knn_scores)
 
+
+
+
+
 #%%
 # Support vector machines
 from sklearn import svm
@@ -665,27 +679,70 @@ data_analyze("Red", red_svm, "SVM")
 
 
 # %%
-# # Neural network - might not have great performance
-# TODO: Mathew: make function - M
+# Neural network - might not have great performance
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-def MLP(x_train, y_train, x_test, y_test):
-    parameters = {
+def MLP_Classifier(x_train, y_train, x_test, y_test, ds_type=None):
+    grid_search = {
         'activation': ['logistic', 'identity', 'tanh', 'relu'],
         'alpha': [0.01, 0.001, 0.0001, 0.00001],
         'learning_rate': ['constant', 'invscaling', 'adaptive'],
         'solver': ['lbfgs', 'sgd', 'adam'], 
         'random_state':[42],
         'max_iter': [1000],
-
         }
-    best_w = {'activation': 'tanh', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
-    best_r = {'activation': 'relu', 'alpha': 0.01, 'learning_rate': 'constant', 'random_state': 42}
+    best_w = {'activation': ['logistic'], 'alpha': [1e-05], 'learning_rate': ['constant'], 'solver': ['lbfgs'], 'random_state': [42], 'max_iter': [100000]}
+    best_r = {'activation': ['logistic'], 'alpha': [0.0001], 'learning_rate': ['constant'], 'solver': ['adam'], 'random_state': [42], 'max_iter': [100000]}
     model = MLPClassifier()
-    clf = GridSearchCV(model, parameters, n_jobs=1, verbose=True, cv=3)
+    param = None
+    if ds_type == 'white': 
+        param = best_w
+    elif ds_type == 'red':
+        param = best_r
+    else:
+        param = grid_search
+    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=5)
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+
+    print('best parameters: {}', clf.best_params_)
+    print('best score: {}', clf.best_score_)
+    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+
+    # print confusion matrix
+    conf = confusion_matrix(y_test, y_pred)
+    print(conf)
+    
+    # get precision scores
+    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
+    print(prec_w)
+    
+MLP_Classifier(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
+MLP_Classifier(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
+
+def MLP_Regressor(x_train, y_train, x_test, y_test, ds_type=None):
+    grid_search = {
+        'activation': ['logistic', 'identity', 'tanh', 'relu'],
+        'alpha': [0.01, 0.001, 0.0001, 0.00001],
+        'learning_rate': ['constant', 'invscaling', 'adaptive'],
+        'solver': ['lbfgs', 'sgd', 'adam'], 
+        'random_state':[42],
+        'max_iter': [500],
+        }
+    best_w = {'activation': ['relu'], 'alpha': [0.01], 'learning_rate': ['constant'], 'random_state': [42], 'solver': ['sgd'], 'max_iter': [100000]}
+    best_r = {'activation': ['tanh'], 'alpha': [0.01], 'learning_rate': ['constant'], 'random_state': [42], 'solver': ['adam'], 'max_iter': [100000]}
+    model = MLPRegressor()
+    param = None
+    if ds_type == 'white': 
+        param = best_w
+    elif ds_type == 'red':
+        param = best_r
+    else:
+        param = grid_search
+    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=5)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -701,10 +758,10 @@ def MLP(x_train, y_train, x_test, y_test):
     # get precision scores
     prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
     print(prec_w)
-    
 
-MLP(white_train_x, white_train_y, white_test_x, white_test_y)
-MLP(red_train_x, red_train_y, red_test_x, red_test_y)
+MLP_Regressor(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
+MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
+
 
 
 
@@ -728,15 +785,6 @@ print(red_pca)
 no_features = 3
 white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
 red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
-
-
-
-# ## retrain with shuffled stratified K-fold cross validation
-# %%
-# TODO: clean up, make function - N
-# bar graphs to compare performance of classifiers
-
-
 
 
 ### Misearble Analysis
