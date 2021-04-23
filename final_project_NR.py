@@ -292,8 +292,7 @@ score_df_col = ["Classifier", "Color", "Accuracy", "SSE"]
 score_df = pd.DataFrame(columns=score_df_col)
 
 def data_analyze(test_y, y_pred, wine_color, classifier_name):
-    wine_color = wine_color.capitalize()
-    classifier_name = classifier_name.capitalize()
+    wine_color = wine_color.title()
     labels = [4,5,6,7,8]
 
     acc = accuracy_score(test_y, y_pred)
@@ -496,7 +495,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "author's-SVM")
+        data_analyze(y_test, y_pred, color, "Author-SVM")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -570,7 +569,7 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Author's SVM")
+        data_analyze(y_test, y_pred, color, "Radius Neighbors Classifier")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -732,7 +731,7 @@ def MLP_Regressor(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Author's SVM")
+        data_analyze(y_test, y_pred, color, "Multi-Layer Perceptron")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
