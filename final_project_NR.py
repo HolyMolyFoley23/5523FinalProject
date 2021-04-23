@@ -343,23 +343,21 @@ def data_analyze(wine_color,classifier,classifier_name):
         y_pred = classifier.predict(red_test_x)
         test_y = red_test_y
         acc = accuracy_score(test_y, y_pred)
-        accuracy_red.append(acc)
-        SSE_red.append(SSE(test_y, y_pred))
+        SSE_data = SSE(test_y, y_pred)
+        SSE_red.append(SSE_data)
     elif(wine_color=="White"):
         y_pred = classifier.predict(white_test_x)
         test_y = white_test_y
         acc = accuracy_score(test_y, y_pred)
         accuracy_white.append(acc)
-        SSE_white.append(SSE(test_y, y_pred))
+        SSE_data = SSE(test_y, y_pred)
+        SSE_white.append(SSE_data)
     else:
         print("Bad Wine Color")
         #raise
     print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
-    print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE}")
-
-    print(len(test_y))
-    print(len(y_pred))
-    print(len(labels))
+    print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE_data}")
+    
     data = confusion_matrix(test_y, y_pred, labels = labels)
     df_cm = pd.DataFrame(data, columns = labels, index = labels)
     df_cm.index.name = 'Actual'
