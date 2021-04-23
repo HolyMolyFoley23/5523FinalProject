@@ -98,30 +98,6 @@ def do_tree(train_x, train_y, test_x, test_y, params, metrics_list, metrics_name
     confusion(test_y, pred, labels=labels,
           title=f"Decision tree classifier - {color} Wine")
     return pred, scores
-
-#%%
-# Experimenting with feature selection
-def diff(l1, l2):
-    return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
-
-l_red = []
-l_white = []
-sel_features_inorder_white = []
-sel_features_inorder_red = []
-for i in range(1, 12):
-    white_train, white_test, white_selected_features = FeatureSelection(i, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
-    l_white.append(white_selected_features)
-    red_train, red_test, red_selected_features = FeatureSelection(i, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
-    l_red.append(red_selected_features)
-    if i == 1:
-        sel_features_inorder_white.append(l_white[0])
-        sel_features_inorder_red.append(l_red[0])
-    else:
-        sel_features_inorder_white.append(diff(l_white[i-1], l_white[i-2]))
-        sel_features_inorder_red.append(diff(l_red[i-1], l_red[i-2]))
-        
-print(f'White selected features, in order: {sel_features_inorder_white}')
-print(f'Red selected features, in order: {sel_features_inorder_red}')
               
 # %%
 ## Data preprocessing and cleaning
@@ -244,7 +220,29 @@ plt.show()
 plt.clf()
 # alcohol content has highest correlation with quality for both red and white wine
 
+#%%
+# Experimenting with feature selection
+def diff(l1, l2):
+    return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
 
+l_red = []
+l_white = []
+sel_features_inorder_white = []
+sel_features_inorder_red = []
+for i in range(1, 12):
+    white_train, white_test, white_selected_features = FeatureSelection(i, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+    l_white.append(white_selected_features)
+    red_train, red_test, red_selected_features = FeatureSelection(i, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
+    l_red.append(red_selected_features)
+    if i == 1:
+        sel_features_inorder_white.append(l_white[0])
+        sel_features_inorder_red.append(l_red[0])
+    else:
+        sel_features_inorder_white.append(diff(l_white[i-1], l_white[i-2]))
+        sel_features_inorder_red.append(diff(l_red[i-1], l_red[i-2]))
+        
+print(f'White selected features, in order: {sel_features_inorder_white}')
+print(f'Red selected features, in order: {sel_features_inorder_red}')
 
 
 # %%
