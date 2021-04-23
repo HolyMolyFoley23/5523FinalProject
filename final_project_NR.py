@@ -127,6 +127,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.manifold import TSNE
+from sklearn.preprocessing import StandardScaler
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
 white_labels = [4, 5, 6, 7, 8]
@@ -195,6 +196,43 @@ def SSE(actual, pred):
     for i in range(len(actual)):
         s += abs(actual[i]-pred[i])**2
     return s
+
+#Prints aout SSE and Accuracy Data and prints out graph
+#Example
+#svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
+#data_analyze("White", white_svm, "SVM")
+def data_analyze(wine_color,classifier,classifier_name):
+    labels = ""
+    if(wine_color=="Red"):
+        y_pred = classifier.predict(red_test_x)
+        test_y = red_test_y
+        labels = red_labels
+        acc = accuracy_score(test_y, y_pred)
+        accuracy_red.append(acc)
+        SSE_red.append(SSE(test_y, y_pred))
+    elif(wine_color=="White"):
+        y_pred = classifier.predict(white_test_x)
+        test_y = white_test_y
+        labels = white_labels
+        acc = accuracy_score(test_y, y_pred)
+        accuracy_white.append(acc)
+        SSE_white.append(SSE(test_y, y_pred))
+    else:
+        print("Bad Wine Color")
+        raise
+    print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
+    print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE}")
+
+
+    data = confusion_matrix(test_y, y_pred, labels = labels)
+    df_cm = pd.DataFrame(data, columns = labels, index = labels)
+    df_cm.index.name = 'Actual'
+    df_cm.columns.name = 'Predicted'
+    cm = sns.heatmap(df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
+    cm.tick_params(left = False, bottom = False)
+    cm.set_title(f'{classifier_name} - {wine_color} Wine')
+    plt.show()
+    plt.clf()
 
 def ROC_AUC(y_pred, y_true, pos_group=None):
     fpr, tpr, thresholds = metrics.roc_curve(y_true=y_true, y_score=y_pred, pos_label=pos_group)
@@ -567,6 +605,7 @@ plt.clf()
 # Naive Bayes
 from sklearn.naive_bayes import GaussianNB
 # TODO: make function - J
+def gnb()
 gnb = GaussianNB()
 white_y_pred = gnb.fit(white_train_x, white_train_y).predict(white_test_x)
 white_gnb_acc = accuracy_score(white_test_y, white_y_pred)
@@ -747,52 +786,16 @@ plt.clf()
 # Support vector machines
 from sklearn import svm
 # TODO: make function - J
-rbf = svm.SVC(kernel = 'rbf', random_state = 42)
-rbf.fit(white_train_x,white_train_y)
+def svm_function(x_train, y_train, x_test, y_test):
+    rbf = svm.SVC(kernel = 'rbf', random_state = 42)
+    rbf.fit(x_train,y_train)
+    return rbf
 
-white_y_pred = rbf.predict(white_test_x)
-white_rbf_acc = accuracy_score(white_test_y, white_y_pred)
-white_rbf_SSE = SSE(white_test_y, white_y_pred)
-print (f" Accuracy for rbf SVM on white dataset is {white_rbf_acc}")
-print (f" SSE for rbf SVM on white dataset is {white_rbf_SSE}")
+white_svm = svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
+data_analyze("White", white_svm, "SVM")
 
-models_white.append('SVM')
-accuracy_white.append(white_rbf_acc)
-SSE_white.append(white_rbf_SSE)
-
-data = confusion_matrix(white_test_y, white_y_pred, labels = white_labels)
-white_rbf_df_cm = pd.DataFrame(data, columns = white_labels, index = white_labels)
-white_rbf_df_cm.index.name = 'Actual'
-white_rbf_df_cm.columns.name = 'Predicted'
-white_rbf_cm = sns.heatmap(white_rbf_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-white_rbf_cm.tick_params(left = False, bottom = False)
-white_rbf_cm.set_title('SVM Classifier - White Wine')
-plt.show()
-plt.clf()
-
-#%%
-rbf.fit(red_train_x,red_train_y)
-
-red_y_pred = rbf.predict(red_test_x)
-red_rbf_acc = accuracy_score(red_test_y, red_y_pred)
-red_rbf_SSE = SSE(red_test_y, red_y_pred)
-print (f" Accuracy for rbf SVM on red dataset is {red_rbf_acc}")
-print (f" SSE for rbf SVM on red dataset is {red_rbf_SSE}")
-
-models_red.append('SVM')
-accuracy_red.append(red_rbf_acc)
-SSE_red.append(red_rbf_SSE)
-
-data = confusion_matrix(red_test_y, red_y_pred, labels = red_labels)
-red_rbf_df_cm = pd.DataFrame(data, columns = red_labels, index = red_labels)
-red_rbf_df_cm.index.name = 'Actual'
-red_rbf_df_cm.columns.name = 'Predicted'
-red_rbf_cm = sns.heatmap(red_rbf_df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-red_rbf_cm.tick_params(left = False, bottom = False)
-red_rbf_cm.set_title('SVM Classifier - Red Wine')
-plt.show()
-plt.clf()
-
+red_svm = svm_function(red_train_x, red_train_y, red_test_x, red_test_y)
+data_analyze("Red", red_svm, "SVM")
 
 
 
