@@ -16,86 +16,7 @@ data_path = r'winequalityN.csv'
 wine = pd.read_csv(data_path)
 
 
-## Defining functions
-from sklearn.feature_selection import SelectKBest
-
-def FeatureSelection(k, df, x_train, y_train, x_test, y_test):
-    s = SelectKBest(k=k).fit(x_train, y_train)
-    mask = s.get_support(True)
-    selected_features = df.columns[mask].tolist()
-    train_selected = SelectKBest(k=k).fit_transform(x_train, y_train)
-    test_selected = SelectKBest(k=k).fit_transform(x_test, y_test)
-    return train_selected, test_selected, selected_features
-
-def confusion(test, pred, labels, title):
-    d = confusion_matrix(test, pred, labels = labels)
-    df_cm = pd.DataFrame(d, columns = labels, index = labels)
-    df_cm.columns.name = 'Predicted'
-    df_cm.index.name = 'Actual'
-    cm = sns.heatmap(df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
-    cm.tick_params(left = False, bottom = False)
-    cm.set_title(title)
-    plt.show()
-    plt.clf()
-
-def plot_metrics(df_scores, models, color):
-    sns.set(style="whitegrid")
-    sns.despine(left=True)
-    for column in df_scores.columns:
-         plot = sns.barplot(y = df_scores[column], x = models)
-         plt.title(f'Classification {column} - {color} Wine dataset')
-         for p in plot.patches:
-             plot.annotate(format(p.get_height(), '0.5f'),
-                           (p.get_x() + p.get_width()/2, p.get_height()), 
-                            ha = 'center', va = 'center',
-                            xytext = (0,-20), 
-                            textcoords = 'offset points', color = 'white')
-         plt.show()
-         plt.clf()
-    
-
-## Classifier functions
-def do_trivial(train_x, train_y, test_x, test_y, metrics_list, metrics_names, color):
-    scores = []
-    pred = np.full(test_y.shape, stats.mode(train_y)[0])
-    for i in range(len(metrics_list)):
-        scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for trivial classifier on {color.lower()} dataset is {scores[i]}.")
-    confusion(test_y, pred, labels=labels,
-          title=f'Trivial Classifer - {color} Wine')
-    return pred, scores
-
-def do_knn(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
-    scores = []
-    k = KNeighborsClassifier(n_neighbors = params['n_neighbors'],
-                           weights = params['weights'])
-    k.fit(train_x, train_y)
-    pred = k.predict(test_x)
-    for i in range(len(metrics_list)):
-        scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for {params['n_neighbors']}-NN classifier on {color.lower()} dataset is {scores[i]}.")
-    confusion(test_y, pred, labels=labels,
-          title=f"{params['n_neighbors']}-NN - {color} Wine")
-    return pred, scores
-
-def do_tree(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
-    scores = []
-    dt = tree.DecisionTreeClassifier(max_depth = params['max_depth'],
-                                      max_leaf_nodes = params['max_leaf_nodes'],
-                                      criterion = params['criterion'],
-                                      random_state = 42)
-    d = dt.fit(train_x, train_y)
-    pred = d.predict(test_x)
-    for i in range(len(metrics_list)):
-        scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for decision tree classifier on {color.lower()} dataset is {scores[i]}.")
-    confusion(test_y, pred, labels=labels,
-          title=f"Decision tree classifier - {color} Wine")
-    return pred, scores
-              
-# %%
 ## Data preprocessing and cleaning
-
 # explore whole data set
 print(wine.info())
 print(wine.describe())
@@ -150,8 +71,7 @@ red = red[(red.quality != 3) & (red.quality != 9)]
 
 
 # %%
-## Exploratory Analysis
-
+## Exploratory Analysis of Each Wine
 # Data summary (mean, median, standard deviation, etc.)
 # White wine
 print("\nWhite Wine\n")
@@ -164,10 +84,6 @@ print(red.describe())
 print(red.info())
 
 
-
-
-
-# %%
 ## Data visualizations
 labels = [4, 5, 6, 7, 8]
 # Histograms
@@ -214,25 +130,17 @@ plt.show()
 plt.clf()
 # alcohol content has highest correlation with quality for both red and white wine
 
+
+
+
+
 # %%
 ### Train/Test Split and other Utilities
 # Paper did a 2/3 1/3 split
 
 # It eventually won't matter when we do k-fold cross validation
 # but it can easily be adjusted for preliminary models with test_size=0.33
-from sklearn import metrics
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import precision_score
-from sklearn.manifold import TSNE
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import StandardScaler
-
-# labels for confusion matrices
-# TODO: fix labels, remove 3 and 9 - N
-
 test_size = 0.33
 
 # Red wine
@@ -271,8 +179,20 @@ accuracy_red = []
 SSE_red = []
 
 
+
+
 #%%
 # Experimenting with feature selection
+## Defining functions
+from sklearn.feature_selection import SelectKBest
+def FeatureSelection(k, df, x_train, y_train, x_test, y_test):
+    s = SelectKBest(k=k).fit(x_train, y_train)
+    mask = s.get_support(True)
+    selected_features = df.columns[mask].tolist()
+    train_selected = SelectKBest(k=k).fit_transform(x_train, y_train)
+    test_selected = SelectKBest(k=k).fit_transform(x_test, y_test)
+    return train_selected, test_selected, selected_features
+
 def diff(l1, l2):
     return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
 
@@ -294,10 +214,15 @@ for i in range(1, 12):
         
 print(f'White selected features, in order: {sel_features_inorder_white}')
 print(f'Red selected features, in order: {sel_features_inorder_red}')
-              
+
+
+
+
 # %%
 #perplexity = 50 for white test data perplexity = 20 for red test data
 #I might have to play around a little bit more
+from sklearn.manifold import TSNE
+
 def two_dimensional_representation(x_data,y_data,title="t-SNE wine",perplexity = 50):
     tsne = TSNE(verbose=1, perplexity=perplexity, random_state = 42)
     X_embedded_data = tsne.fit_transform(x_data)
@@ -321,6 +246,41 @@ two_dimensional_representation(white_test_x,white_test_y,"White actual",50)
 
 
 #%%
+### Helper Functions/Variables and Imports
+from sklearn import metrics
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import precision_score
+from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
+
+def confusion(test, pred, labels, title):
+    d = confusion_matrix(test, pred, labels = labels)
+    df_cm = pd.DataFrame(d, columns = labels, index = labels)
+    df_cm.columns.name = 'Predicted'
+    df_cm.index.name = 'Actual'
+    cm = sns.heatmap(df_cm, cmap = 'Blues', linewidths = 0.1, annot=True, fmt = 'd')
+    cm.tick_params(left = False, bottom = False)
+    cm.set_title(title)
+    plt.show()
+    plt.clf()
+
+def plot_metrics(df_scores, models, color):
+    sns.set(style="whitegrid")
+    sns.despine(left=True)
+    for column in df_scores.columns:
+         plot = sns.barplot(y = df_scores[column], x = models)
+         plt.title(f'Classification {column} - {color} Wine dataset')
+         for p in plot.patches:
+             plot.annotate(format(p.get_height(), '0.5f'),
+                           (p.get_x() + p.get_width()/2, p.get_height()), 
+                            ha = 'center', va = 'center',
+                            xytext = (0,-20), 
+                            textcoords = 'offset points', color = 'white')
+         plt.show()
+         plt.clf()
+
 # defining SSE
 def SSE(actual, pred):
     s = 0
@@ -492,12 +452,25 @@ def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
 metrics_list = [accuracy_score, SSE] #classifiers will apply each of these metrics 
 metrics_names = ['Accuracy', 'SSE'] #for plotting
 
+
+
+
+
 # %%
 # trivial classifier 
 # predicts the mode (6 for white records, 5 for red) for all records
 # this will serve as baseline for performance
-# TODO: make function - N
 from scipy import stats
+
+def do_trivial(train_x, train_y, test_x, test_y, metrics_list, metrics_names, color):
+    scores = []
+    pred = np.full(test_y.shape, stats.mode(train_y)[0])
+    for i in range(len(metrics_list)):
+        scores.append(metrics_list[i](test_y, pred)) 
+        print(f" {metrics_names[i]} for trivial classifier on {color.lower()} dataset is {scores[i]}.")
+    confusion(test_y, pred, labels=labels,
+          title=f'Trivial Classifer - {color} Wine')
+    return pred, scores
 
 white_trivial_pred, white_trivial_scores = do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, metrics_list, metrics_names, 'white')
 red_trivial_pred, red_trivial_scores = do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, metrics_list, metrics_names, 'red')
@@ -507,9 +480,10 @@ scores_white.append(white_trivial_scores)
 scores_red.append(red_trivial_scores)
 
 
+
+
 # %%
-## Replicate Author's SVM
-# Support vector machines
+# Replicate Author's SVM
 from sklearn.svm import SVR
 np.set_printoptions(precision=4)
 def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
@@ -548,10 +522,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
     # get precision scores
     prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
     print(prec_w)
-
-    # from sklearn.metrics import classification_report
     
-
 Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
@@ -559,29 +530,9 @@ Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
-#%%
-# "Base" classifiers
-from sklearn.linear_model import LogisticRegression as LR
-print('LogisticRegression')
-model = LR(random_state=0, n_jobs=-1)
-oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, labels)
-
-from sklearn.linear_model import RidgeClassifier as RC
-print('RidgeClassifier')
-model = RC(random_state=0)
-oneVsRestAnalysis(model, white_train_x, white_train_y, white_test_x, white_test_y, labels)
-# logistic and ridge regression perform the best
-
-
-
-
-
 ## Unsupervised Learning
-
 # %%
-# # Clustering
-# from sklearn.cluster import KMeans
-# TODO: make function - Jack
+# Kmeans clustering
 from sklearn.cluster import KMeans
 def K_means(x_train, y_train, x_test, y_test, title = "Wine"):
     distortions = []
@@ -609,7 +560,7 @@ K_means(red_train_x, red_train_y, red_test_x, red_test_y,"red wine")
 
 
 
-
+## Supervised Learning
 # %%
 # Nearest Neighbors, the unsupervised version doesn't allow for classification
 from sklearn.neighbors import RadiusNeighborsClassifier
@@ -654,12 +605,24 @@ RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
-## Supervised Learning
 # %%
 # Decision tree
 from sklearn.model_selection import RandomizedSearchCV
-              
 from sklearn import tree
+def do_tree(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
+    scores = []
+    dt = tree.DecisionTreeClassifier(max_depth = params['max_depth'],
+                                      max_leaf_nodes = params['max_leaf_nodes'],
+                                      criterion = params['criterion'],
+                                      random_state = 42)
+    d = dt.fit(train_x, train_y)
+    pred = d.predict(test_x)
+    for i in range(len(metrics_list)):
+        scores.append(metrics_list[i](test_y, pred)) 
+        print(f" {metrics_names[i]} for decision tree classifier on {color.lower()} dataset is {scores[i]}.")
+    confusion(test_y, pred, labels=labels,
+          title=f"Decision tree classifier - {color} Wine")
+    return pred, scores
 
 # feature selection
 # testing number of features yielded n=5 as ideal number of features for red; using all features was ideal for white
@@ -691,7 +654,6 @@ scores_red.append(red_tree_scores)
 # %%
 # Naive Bayes
 from sklearn.naive_bayes import GaussianNB
-# TODO: make function - Jack
 def gaussian_nb(x_train, y_train, x_test, y_test):
     gnb = GaussianNB()
     gnb.fit(x_train, y_train)
@@ -712,7 +674,20 @@ data_analyze("Red", red_gnb, "GNB")
               
 # feature selection
 # testing feature selection produced best results for using all features for both datasets   
-              
+def do_knn(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
+    scores = []
+    k = KNeighborsClassifier(n_neighbors = params['n_neighbors'],
+                           weights = params['weights'])
+    k.fit(train_x, train_y)
+    pred = k.predict(test_x)
+    for i in range(len(metrics_list)):
+        scores.append(metrics_list[i](test_y, pred)) 
+        print(f" {metrics_names[i]} for {params['n_neighbors']}-NN classifier on {color.lower()} dataset is {scores[i]}.")
+    confusion(test_y, pred, labels=labels,
+          title=f"{params['n_neighbors']}-NN - {color} Wine")
+    return pred, scores
+
+
 parameters = {'n_neighbors':range(1,20), 'weights':['uniform', 'distance']}
 knn = KNeighborsClassifier()
 clf = GridSearchCV(knn, parameters, scoring='precision_micro', n_jobs=1, verbose=True, cv=3)
