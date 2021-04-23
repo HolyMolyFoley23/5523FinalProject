@@ -297,11 +297,9 @@ def data_analyze(test_y, y_pred, wine_color, classifier_name):
     acc = accuracy_score(test_y, y_pred)
     SSE_data = SSE(test_y, y_pred)
     score_df.loc[len(score_df.index)] = [classifier_name, wine_color, acc, SSE_data]
-    print(score_df)
 
-
-    print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
-    print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE_data}")
+    print (f"Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
+    print (f"SSE for {classifier_name} on {wine_color} dataset is {SSE_data}")
     title = f"{classifier_name} - {wine_color} Wine"
     confusion(test_y, y_pred, labels, title)
 
@@ -505,7 +503,6 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
         print(confusion_matrix(y_test, y_pred))
         print(precision_score(y_test, y_pred, average=None, zero_division=0))
    
-
 Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
@@ -547,7 +544,7 @@ K_means(red_train_x, red_train_y, red_test_x, red_test_y,"red wine")
 # %%
 # Radius Nearest Neighbors, the unsupervised version doesn't allow for classification
 from sklearn.neighbors import RadiusNeighborsClassifier
-def RNC(x_train, y_train, x_test, y_test, ds_type=None):
+def RNC(x_train, y_train, x_test, y_test, color=None):
     grid_search = {
         'weights': ['uniform', 'distance'],
         'radius': np.arange(1.0, 11.0, 0.5),
@@ -558,9 +555,9 @@ def RNC(x_train, y_train, x_test, y_test, ds_type=None):
     best_w = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
     best_r = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
     param=None
-    if ds_type == 'white':
+    if color == 'white':
         param = best_w
-    elif ds_type == 'red':
+    elif color == 'red':
         param = best_r
     else:
         param = grid_search
@@ -570,17 +567,15 @@ def RNC(x_train, y_train, x_test, y_test, ds_type=None):
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
-    print('best parameters: {}', clf.best_params_)
-    print('best score: {}', clf.best_score_)
-    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+    if color == 'white' or color == 'red':
+        data_analyze(y_test, y_pred, color, "Author's SVM")
 
-    # print confusion matrix
-    conf = confusion_matrix(y_test, y_pred)
-    print(conf)
-    
-    # get precision scores
-    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
-    print(prec_w)
+    if color==None:
+        print('best parameters: {}', clf.best_params_)
+        print('best score: {}', clf.best_score_)
+        print("MAE: {}", mean_absolute_error(y_test, y_pred)) 
+        print(confusion_matrix(y_test, y_pred))
+        print(precision_score(y_test, y_pred, average=None, zero_division=0))
     
 RNC(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
@@ -713,7 +708,7 @@ data_analyze("Red", red_svm, "SVM")
 # Neural network - might not have great performance
 from sklearn.neural_network import MLPRegressor
 
-def MLP_Regressor(x_train, y_train, x_test, y_test, ds_type=None):
+def MLP_Regressor(x_train, y_train, x_test, y_test, color=None):
     grid_search = {
         'activation': ['logistic', 'identity', 'tanh', 'relu'],
         'alpha': [0.01, 0.001, 0.0001, 0.00001],
@@ -726,9 +721,9 @@ def MLP_Regressor(x_train, y_train, x_test, y_test, ds_type=None):
     best_r = {'activation': ['tanh'], 'alpha': [0.01], 'learning_rate': ['constant'], 'random_state': [42], 'solver': ['adam'], 'max_iter': [100000]}
     model = MLPRegressor()
     param = None
-    if ds_type == 'white': 
+    if color == 'white': 
         param = best_w
-    elif ds_type == 'red':
+    elif color == 'red':
         param = best_r
     else:
         param = grid_search
@@ -737,17 +732,15 @@ def MLP_Regressor(x_train, y_train, x_test, y_test, ds_type=None):
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
-    print('best parameters: {}', clf.best_params_)
-    print('best score: {}', clf.best_score_)
-    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+    if color == 'white' or color == 'red':
+        data_analyze(y_test, y_pred, color, "Author's SVM")
 
-    # print confusion matrix
-    conf = confusion_matrix(y_test, y_pred)
-    print(conf)
-    
-    # get precision scores
-    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
-    print(prec_w)
+    if color==None:
+        print('best parameters: {}', clf.best_params_)
+        print('best score: {}', clf.best_score_)
+        print("MAE: {}", mean_absolute_error(y_test, y_pred)) 
+        print(confusion_matrix(y_test, y_pred))
+        print(precision_score(y_test, y_pred, average=None, zero_division=0))
 
 MLP_Regressor(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
