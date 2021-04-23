@@ -42,6 +42,21 @@ def confusion(test, pred, labels, title):
     cm.set_title(title)
     plt.show()
     plt.clf()
+
+def plot_metrics(df_scores, models, color):
+    sns.set(style="whitegrid")
+    sns.despine(left=True)
+    for column in df_scores.columns:
+         plot = sns.barplot(y = df_scores[column], x = models)
+         plt.title(f'Classification {column} - {color} Wine dataset')
+         for p in plot.patches:
+             plot.annotate(format(p.get_height(), '0.5f'),
+                           (p.get_x() + p.get_width()/2, p.get_height()), 
+                            ha = 'center', va = 'center',
+                            xytext = (0,-20), 
+                            textcoords = 'offset points', color = 'white')
+         plt.show()
+         plt.clf()
     
 # %%
 ## Classifier functions
@@ -51,9 +66,9 @@ def do_trivial(train_x, train_y, test_x, test_y, color):
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
     for i in range(len(metrics_list)):
         scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for trivial classifier on {color} dataset is {scores[i]}.")
+        print(f" {metrics_names[i]} for trivial classifier on {color.lower()} dataset is {scores[i]}.")
     confusion(test_y, pred, labels=labels,
-          title=f'Trivial Classifer - {color} wine')
+          title=f'Trivial Classifer - {color} Wine')
     return pred, scores
 
 def do_knn(train_x, train_y, test_x, test_y, params, color):
@@ -64,9 +79,9 @@ def do_knn(train_x, train_y, test_x, test_y, params, color):
     pred = k.predict(test_x)
     for i in range(len(metrics_list)):
         scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for {params['n_neighbors']}-NN classifier on {color} dataset is {scores[i]}.")
+        print(f" {metrics_names[i]} for {params['n_neighbors']}-NN classifier on {color.lower()} dataset is {scores[i]}.")
     confusion(test_y, pred, labels=labels,
-          title=f"{params['n_neighbors']}-NN - {color} wine")
+          title=f"{params['n_neighbors']}-NN - {color} Wine")
     return pred, scores
 
 def do_tree(train_x, train_y, test_x, test_y, params, color):
@@ -79,10 +94,34 @@ def do_tree(train_x, train_y, test_x, test_y, params, color):
     pred = d.predict(test_x)
     for i in range(len(metrics_list)):
         scores.append(metrics_list[i](test_y, pred)) 
-        print(f" {metrics_names[i]} for decision tree classifier on {color} dataset is {scores[i]}.")
+        print(f" {metrics_names[i]} for decision tree classifier on {color.lower()} dataset is {scores[i]}.")
     confusion(test_y, pred, labels=labels,
-          title=f"Decision tree classifier - {color} wine")
+          title=f"Decision tree classifier - {color} Wine")
     return pred, scores
+
+#%%
+# Experimenting with feature selection
+def diff(l1, l2):
+    return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
+
+l_red = []
+l_white = []
+sel_features_inorder_white = []
+sel_features_inorder_red = []
+for i in range(1, 12):
+    white_train, white_test, white_selected_features = FeatureSelection(i, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+    l_white.append(white_selected_features)
+    red_train, red_test, red_selected_features = FeatureSelection(i, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
+    l_red.append(red_selected_features)
+    if i == 1:
+        sel_features_inorder_white.append(l_white[0])
+        sel_features_inorder_red.append(l_red[0])
+    else:
+        sel_features_inorder_white.append(diff(l_white[i-1], l_white[i-2]))
+        sel_features_inorder_red.append(diff(l_red[i-1], l_red[i-2]))
+        
+print(f'White selected features, in order: {sel_features_inorder_white}')
+print(f'Red selected features, in order: {sel_features_inorder_red}')
               
 # %%
 ## Data preprocessing and cleaning
@@ -103,7 +142,36 @@ red = red.drop(columns = ['type'])
 white = white.dropna()
 red = red.dropna()
 
-# TODO: remove 3 and 9 quality wines - N
+labels = [0,1,2,3,4,5,6,7,8,9,10,11]
+
+# white wine
+fig, ax = plt.subplots(1,1)
+ax.hist(white['quality'], bins=labels, align='left')
+ax.set_title('Histogram of White Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
+sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
+plt.show()
+plt.clf()
+
+# red wine
+fig, ax = plt.subplots(1,1)
+ax.hist(red['quality'], bins=labels, align='left')
+ax.set_title('Histogram of Red Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
+sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
+plt.show()
+plt.clf()
+              
 # dropping 'outliers', i.e., records w/ 'quality' values of 3 or 9
 white = white[(white.quality != 3) & (white.quality != 9)]
 red = red[(red.quality != 3) & (red.quality != 9)]
@@ -134,19 +202,29 @@ print(red.info())
 
 # Histograms
 # white wine
-plt.title('Histogram of White Wine Quality')
-plt.xlabel('Quality')
-plt.ylabel('Count')
-plt.hist(white['quality'], bins=[4,5,6,7,8])
+fig, ax = plt.subplots(1,1)
+ax.hist(white['quality'], bins=labels, align='left')
+ax.set_title('Histogram of White Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
 sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
 plt.show()
 plt.clf()
 # red wine
-plt.title('Histogram of Red Wine Quality')
-plt.xlabel('Quality')
-plt.ylabel('Count')
-plt.hist(red['quality'], bins=[4,5,6,7,8])
+fig, ax = plt.subplots(1,1)
+ax.hist(red['quality'], bins=labels, align='left')
+ax.set_title('Histogram of Red Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
 sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
 plt.show()
 plt.clf()
 # appears that quality of both red and white wine follows roughly a normal distribution
@@ -154,13 +232,13 @@ plt.clf()
 # Correlation maps
 # white wine
 plt.figure(figsize=(10,6))
-corr_white = sns.heatmap(white.corr(), annot=True, cmap='cubehelix_r')
+corr_white = sns.heatmap(white.corr(), annot=True, cmap='Blues')
 corr_white.set_title('Correlation Map - White Wine')
 plt.show()
 plt.clf()
 # red wine
 plt.figure(figsize=(10,6))
-corr_red = sns.heatmap(red.corr(), annot=True, cmap='cubehelix_r')
+corr_red = sns.heatmap(red.corr(), annot=True, cmap='Blues')
 corr_red.set_title('Correlation Map - Red Wine')
 plt.show()
 plt.clf()
@@ -591,6 +669,10 @@ from sklearn.model_selection import RandomizedSearchCV
               
 from sklearn import tree
 
+# feature selection
+# testing number of features yielded n=5 as ideal number of features for red; using all features was ideal for white
+red_train_selected, red_test_selected, red_selected_features = FeatureSelection(5, red_x, red_train_x, red_train_y, red_test_x, red_test_y)              
+              
 parameters = {'max_depth':range(1,1000), 'criterion' :['gini', 'entropy'],
               'max_leaf_nodes':range(1,1000)}
 dt = tree.DecisionTreeClassifier(random_state = 42)
@@ -599,11 +681,11 @@ clf = RandomizedSearchCV(dt, parameters, n_jobs=1, n_iter=10, verbose=True, rand
 clf.fit(white_train_x, white_train_y)
 white_params = clf.best_params_
 
-clf.fit(red_train_x, red_train_y)
+clf.fit(red_train_selected, red_train_y)
 red_params = clf.best_params_
 
-white_tree_pred, white_tree_scores = do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'white')
-red_tree_pred, red_tree_scores = do_tree(red_train_x, red_train_y, red_test_x, red_test_y, red_params, 'red')
+white_tree_pred, white_tree_scores = do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
+red_tree_pred, red_tree_scores = do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, 'Red')
 
 models.append('DT')
 scores_white.append(white_tree_scores)
@@ -635,10 +717,10 @@ data_analyze("Red", red_gnb, "GNB")
 
 #%%
 # K-nearest neighbor
-
-# TODO: make function - N baby
-#What N?
-# maybe total classes -1 Play around a little
+              
+# feature selection
+# testing feature selection produced best results for using all features for both datasets   
+              
 parameters = {'n_neighbors':range(1,20), 'weights':['uniform', 'distance']}
 knn = KNeighborsClassifier()
 clf = GridSearchCV(knn, parameters, scoring='precision_micro', n_jobs=1, verbose=True, cv=3)
@@ -770,21 +852,33 @@ MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 # ## feature selection
 # TODO: make function, maybe use PCA? - N
 # %%
-from sklearn.decomposition import PCA
+#from sklearn.decomposition import PCA
 
-pca = PCA(n_components = 2, random_state = 42)
-white_reduced = pca.fit_transform(white_train_x)
-white_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
-print(white_pca)
+#pca = PCA(n_components = 2, random_state = 42)
+#white_reduced = pca.fit_transform(white_train_x)
+#white_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
+#print(white_pca)
 
-red_reduced = pca.fit_transform(red_train_x)
-red_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
-print(red_pca)
+#red_reduced = pca.fit_transform(red_train_x)
+#red_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
+#print(red_pca)
 
-# ChooseKBest feature selection - we should play around with this
-no_features = 3
-white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
-red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
+## ChooseKBest feature selection - we should play around with this
+#no_features = 3
+#white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+#red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
+
+
+# %%
+# Plotting performance
+# bar graphs to compare performance of classifiers
+
+df_scores_white = pd.DataFrame(scores_white, columns = metrics_names, index = models)
+df_scores_red = pd.DataFrame(scores_red, columns = metrics_names, index = models)
+
+plot_metrics(df_scores_white, models, 'White')
+plot_metrics(df_scores_red, models, 'Red')
+
 
 
 ### Misearble Analysis
