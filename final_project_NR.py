@@ -61,7 +61,7 @@ def plot_metrics(df_scores, models, color):
 # %%
 ## Classifier functions
 
-def do_trivial(train_x, train_y, test_x, test_y, color):
+def do_trivial(train_x, train_y, test_x, test_y, metrics_list, metrics_names, color):
     scores = []
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
     for i in range(len(metrics_list)):
@@ -71,7 +71,7 @@ def do_trivial(train_x, train_y, test_x, test_y, color):
           title=f'Trivial Classifer - {color} Wine')
     return pred, scores
 
-def do_knn(train_x, train_y, test_x, test_y, params, color):
+def do_knn(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
     scores = []
     k = KNeighborsClassifier(n_neighbors = params['n_neighbors'],
                            weights = params['weights'])
@@ -84,7 +84,7 @@ def do_knn(train_x, train_y, test_x, test_y, params, color):
           title=f"{params['n_neighbors']}-NN - {color} Wine")
     return pred, scores
 
-def do_tree(train_x, train_y, test_x, test_y, params, color):
+def do_tree(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
     scores = []
     dt = tree.DecisionTreeClassifier(max_depth = params['max_depth'],
                                       max_leaf_nodes = params['max_leaf_nodes'],
@@ -507,8 +507,8 @@ metrics_names = ['Accuracy', 'SSE'] #for plotting
 # TODO: make function - N
 from scipy import stats
 
-white_trivial_pred, white_trivial_scores = do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
-red_trivial_pred, red_trivial_scores = do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
+white_trivial_pred, white_trivial_scores = do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, metrics_list, metrics_names, 'white')
+red_trivial_pred, red_trivial_scores = do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, metrics_list, metrics_names, 'red')
 
 models.append('Trivial')
 scores_white.append(white_trivial_scores)
@@ -684,8 +684,8 @@ white_params = clf.best_params_
 clf.fit(red_train_selected, red_train_y)
 red_params = clf.best_params_
 
-white_tree_pred, white_tree_scores = do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
-red_tree_pred, red_tree_scores = do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, 'Red')
+white_tree_pred, white_tree_scores = do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, metrics_list, metrics_names, 'White')
+red_tree_pred, red_tree_scores = do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, metrics_list, metrics_names, 'Red')
 
 models.append('DT')
 scores_white.append(white_tree_scores)
@@ -731,8 +731,8 @@ white_params = clf.best_params_
 clf.fit(red_train_x, red_train_y)
 red_params = clf.best_params_
 
-white_knn_pred, white_knn_scores = do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'white')
-red_knn_pred, red_knn_scores = do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params, 'red')
+white_knn_pred, white_knn_scores = do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, metrics_list, metrics_names, 'white')
+red_knn_pred, red_knn_scores = do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params, metrics_list, metrics_names, 'red')
 
 models.append('KNN')
 scores_white.append(white_knn_scores)
