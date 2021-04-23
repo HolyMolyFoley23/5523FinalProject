@@ -142,7 +142,36 @@ red = red.drop(columns = ['type'])
 white = white.dropna()
 red = red.dropna()
 
-# TODO: remove 3 and 9 quality wines - N
+labels = [0,1,2,3,4,5,6,7,8,9,10,11]
+
+# white wine
+fig, ax = plt.subplots(1,1)
+ax.hist(white['quality'], bins=labels, align='left')
+ax.set_title('Histogram of White Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
+sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
+plt.show()
+plt.clf()
+
+# red wine
+fig, ax = plt.subplots(1,1)
+ax.hist(red['quality'], bins=labels, align='left')
+ax.set_title('Histogram of Red Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
+sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
+plt.show()
+plt.clf()
+              
 # dropping 'outliers', i.e., records w/ 'quality' values of 3 or 9
 white = white[(white.quality != 3) & (white.quality != 9)]
 red = red[(red.quality != 3) & (red.quality != 9)]
@@ -173,19 +202,29 @@ print(red.info())
 
 # Histograms
 # white wine
-plt.title('Histogram of White Wine Quality')
-plt.xlabel('Quality')
-plt.ylabel('Count')
-plt.hist(white['quality'], bins=[4,5,6,7,8])
+fig, ax = plt.subplots(1,1)
+ax.hist(white['quality'], bins=labels, align='left')
+ax.set_title('Histogram of White Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
 sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
 plt.show()
 plt.clf()
 # red wine
-plt.title('Histogram of Red Wine Quality')
-plt.xlabel('Quality')
-plt.ylabel('Count')
-plt.hist(red['quality'], bins=[4,5,6,7,8])
+fig, ax = plt.subplots(1,1)
+ax.hist(red['quality'], bins=labels, align='left')
+ax.set_title('Histogram of Red Wine Quality')
+ax.set_xlabel('Quality')
+ax.set_ylabel('Count')
 sns.set(style="whitegrid")
+rects = ax.patches
+for rect in rects:
+    height = rect.get_height()
+    ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
 plt.show()
 plt.clf()
 # appears that quality of both red and white wine follows roughly a normal distribution
@@ -193,13 +232,13 @@ plt.clf()
 # Correlation maps
 # white wine
 plt.figure(figsize=(10,6))
-corr_white = sns.heatmap(white.corr(), annot=True, cmap='cubehelix_r')
+corr_white = sns.heatmap(white.corr(), annot=True, cmap='Blues')
 corr_white.set_title('Correlation Map - White Wine')
 plt.show()
 plt.clf()
 # red wine
 plt.figure(figsize=(10,6))
-corr_red = sns.heatmap(red.corr(), annot=True, cmap='cubehelix_r')
+corr_red = sns.heatmap(red.corr(), annot=True, cmap='Blues')
 corr_red.set_title('Correlation Map - Red Wine')
 plt.show()
 plt.clf()
