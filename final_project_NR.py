@@ -288,28 +288,23 @@ def SSE(actual, pred):
 #Example
 #svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
 #data_analyze("White", white_svm, "SVM")
-def data_analyze(wine_color,classifier,classifier_name):
+score_df_col = ["Classifier", "Color", "Accuracy", "SSE"]
+score_df = pd.DataFrame(columns=score_df_col)
+
+def data_analyze(test_y, y_pred, wine_color, classifier_name):
     labels = [4,5,6,7,8]
-    if(wine_color=="Red"):
-        y_pred = classifier.predict(red_test_x)
-        test_y = red_test_y
-        acc = accuracy_score(test_y, y_pred)
-        SSE_data = SSE(test_y, y_pred)
-        SSE_red.append(SSE_data)
-    elif(wine_color=="White"):
-        y_pred = classifier.predict(white_test_x)
-        test_y = white_test_y
-        acc = accuracy_score(test_y, y_pred)
-        accuracy_white.append(acc)
-        SSE_data = SSE(test_y, y_pred)
-        SSE_white.append(SSE_data)
-    else:
-        print("Bad Wine Color")
-        #raise
+
+    acc = accuracy_score(test_y, y_pred)
+    SSE_data = SSE(test_y, y_pred)
+    score_df.loc[len(score_df.index)] = [classifier_name, wine_color, acc, SSE_data]
+    print(score_df)
+
+
     print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
     print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE_data}")
     title = f"{classifier_name} - {wine_color} Wine"
-    confusion(test_y, y_pred, labels,title)
+    confusion(test_y, y_pred, labels, title)
+
 
 def ROC_AUC(y_pred, y_true, pos_group=None):
     fpr, tpr, thresholds = metrics.roc_curve(y_true=y_true, y_score=y_pred, pos_label=pos_group)
@@ -474,7 +469,7 @@ scores_red.append(red_trivial_scores)
 # Replicate Author's SVM
 from sklearn.svm import SVR
 np.set_printoptions(precision=4)
-def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
+def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     # using gamma values that the authors found were the best
     white_gamma = 2**1.55  # 2.928
     red_gamma = 2**0.19  # 1.14
@@ -483,16 +478,16 @@ def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
     best_w = {'C': [2], 'gamma': [0.6951927961775606]}
     best_r = {'C': [1], 'gamma': [0.07847599703514611]}
     author_params = {'C':[3], 'gamma':[white_gamma, red_gamma]}
-    svm_clf = svm.SVR(kernel='rbf')
+    svm_clf = SVR(kernel='rbf')
 
     param=None
-    if ds_type == 'white':
+    if color == 'white':
         param = best_w
-    elif ds_type == 'red':
+    elif color == 'red':
         param = best_r
-    elif ds_type == 'authors':
+    elif color == 'authors':
         param = author_params
-    else:
+    else:  # no color given then seraches for best scores
         param = grid_search
 
     clf = GridSearchCV(svm_clf, param, n_jobs=1, verbose=True, cv=5)
@@ -500,20 +495,16 @@ def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
-    print('best parameters: {}', clf.best_params_)
-    print('best score: {}', clf.best_score_)
-    print("MAE: {}", mean_absolute_error(y_test, y_pred))
+    if color == 'white' or color == 'red':
+        data_analyze(y_test, y_pred, color, "Author's SVM")
 
-    # print confusion matrix
-    conf = confusion_matrix(y_test, y_pred)
-    print(conf)
-    
-    # get precision scores
-    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
-    print(prec_w)
-
-Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'author')
-Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'author')
+    if color==None:
+        print('best parameters: {}', clf.best_params_)
+        print('best score: {}', clf.best_score_)
+        print("MAE: {}", mean_absolute_error(y_test, y_pred)) 
+        print(confusion_matrix(y_test, y_pred))
+        print(precision_score(y_test, y_pred, average=None, zero_division=0))
+   
 
 Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
