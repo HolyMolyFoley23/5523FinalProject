@@ -8,17 +8,13 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.neighbors import KNeighborsClassifier
+
 from sklearn.preprocessing import StandardScaler
 #data_path = './winequalityN.csv'
 #HI 
 data_path = r'winequalityN.csv'
 wine = pd.read_csv(data_path)
 
-'''Some things to consider from the paper...
-SVM relative importance plots for attributes?
-“We will adopt a regression approach, which preserves the order of the preferences.
-For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7.”'''
 
 ## Data preprocessing and cleaning
 # explore whole data set
@@ -139,9 +135,9 @@ plt.clf()
 
 
 # %%
-### Train/Test Split and other Utilities
-# Paper did a 2/3 1/3 split
+### Train/Test Split and Data Standardizations
 
+# Paper did a 2/3 1/3 split
 # It eventually won't matter when we do k-fold cross validation
 # but it can easily be adjusted for preliminary models with test_size=0.33
 from sklearn.model_selection import train_test_split
@@ -164,7 +160,6 @@ white_test_y = white_test_y.to_numpy()
 # creating index of features
 features = white_train_x.columns
 
-# TODO: standardized to a zero mean and one standard deviation for input attr - N
 # standardizing feature values
 scaler = StandardScaler()
 white_train_x = scaler.fit_transform(white_train_x)
@@ -182,8 +177,6 @@ SSE_white = []
 models_red = []
 accuracy_red = []
 SSE_red = []
-
-# TODO: 2D representation of classifier splitting data - J
 
 
 
@@ -478,7 +471,7 @@ scores_red.append(red_trivial_scores)
 
 #%%
 #import metrics
-from sklearn.metrics import mean_absolute_error
+
 from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
 
@@ -557,7 +550,7 @@ K_means(red_train_x, red_train_y, red_test_x, red_test_y,"red wine")
 
 ## Supervised Learning
 # %%
-# Nearest Neighbors, the unsupervised version doesn't allow for classification
+# Radius Nearest Neighbors, the unsupervised version doesn't allow for classification
 from sklearn.neighbors import RadiusNeighborsClassifier
 def RNC(x_train, y_train, x_test, y_test, ds_type=None):
     grid_search = {
@@ -666,7 +659,7 @@ data_analyze("Red", red_gnb, "GNB")
 
 #%%
 # K-nearest neighbor
-              
+from sklearn.neighbors import KNeighborsClassifier
 # feature selection
 # testing feature selection produced best results for using all features for both datasets   
 def do_knn(train_x, train_y, test_x, test_y, params, metrics_list, metrics_names, color):
@@ -707,7 +700,6 @@ scores_red.append(red_knn_scores)
 #%%
 # Support vector machines
 from sklearn import svm
-# TODO: make function - J
 def svm_function(x_train, y_train, x_test, y_test):
     rbf = svm.SVC(kernel = 'rbf', random_state = 42)
     rbf.fit(x_train,y_train)
@@ -724,48 +716,7 @@ data_analyze("Red", red_svm, "SVM")
 
 # %%
 # Neural network - might not have great performance
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_absolute_error
-from sklearn.metrics import precision_score
-from sklearn.metrics import confusion_matrix
-from sklearn.neural_network import MLPClassifier, MLPRegressor
-def MLP_Classifier(x_train, y_train, x_test, y_test, ds_type=None):
-    grid_search = {
-        'activation': ['logistic', 'identity', 'tanh', 'relu'],
-        'alpha': [0.01, 0.001, 0.0001, 0.00001],
-        'learning_rate': ['constant', 'invscaling', 'adaptive'],
-        'solver': ['lbfgs', 'sgd', 'adam'], 
-        'random_state':[42],
-        'max_iter': [1000],
-        }
-    best_w = {'activation': ['logistic'], 'alpha': [1e-05], 'learning_rate': ['constant'], 'solver': ['lbfgs'], 'random_state': [42], 'max_iter': [100000]}
-    best_r = {'activation': ['logistic'], 'alpha': [0.0001], 'learning_rate': ['constant'], 'solver': ['adam'], 'random_state': [42], 'max_iter': [100000]}
-    model = MLPClassifier()
-    param = None
-    if ds_type == 'white': 
-        param = best_w
-    elif ds_type == 'red':
-        param = best_r
-    else:
-        param = grid_search
-    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=5)
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
-
-    print('best parameters: {}', clf.best_params_)
-    print('best score: {}', clf.best_score_)
-    print("MAE: {}", mean_absolute_error(y_test, y_pred))
-
-    # print confusion matrix
-    conf = confusion_matrix(y_test, y_pred)
-    print(conf)
-    
-    # get precision scores
-    prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
-    print(prec_w)
-    
-MLP_Classifier(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
-MLP_Classifier(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
+from sklearn.neural_network import MLPRegressor
 
 def MLP_Regressor(x_train, y_train, x_test, y_test, ds_type=None):
     grid_search = {
