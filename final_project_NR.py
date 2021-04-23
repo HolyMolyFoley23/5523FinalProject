@@ -2,21 +2,16 @@
 # To add a new markdown cell, type '# %% [markdown]'
 # %%
 from IPython import get_ipython
-
 get_ipython().run_line_magic('matplotlib', 'inline')
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from sklearn.preprocessing import StandardScaler
-#data_path = './winequalityN.csv'
-#HI 
+## Data preprocessing and cleaning
 data_path = r'winequalityN.csv'
 wine = pd.read_csv(data_path)
 
-
-## Data preprocessing and cleaning
 # explore whole data set
 print(wine.info())
 print(wine.describe())
@@ -85,6 +80,7 @@ print(red.info())
 
 
 ## Data visualizations
+
 labels = [4, 5, 6, 7, 8]
 # Histograms
 # white wine
@@ -100,6 +96,7 @@ for rect in rects:
     ax.text(rect.get_x() + rect.get_width()/2, height + 0.5, '{:.0f}'.format(height), ha='center', va = 'bottom')
 plt.show()
 plt.clf()
+
 # red wine
 fig, ax = plt.subplots(1,1)
 ax.hist(red['quality'], bins=labels, align='left')
@@ -141,6 +138,7 @@ plt.clf()
 # It eventually won't matter when we do k-fold cross validation
 # but it can easily be adjusted for preliminary models with test_size=0.33
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 test_size = 0.33
 
 # Red wine
@@ -252,7 +250,6 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import precision_score
 from sklearn.model_selection import GridSearchCV
-from sklearn.preprocessing import StandardScaler
 
 def confusion(test, pred, labels, title):
     d = confusion_matrix(test, pred, labels = labels)
@@ -313,7 +310,6 @@ def data_analyze(wine_color,classifier,classifier_name):
     print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE_data}")
     title = f"{classifier_name} - {wine_color} Wine"
     confusion(test_y, y_pred, labels,title)
-
 
 def ROC_AUC(y_pred, y_true, pos_group=None):
     fpr, tpr, thresholds = metrics.roc_curve(y_true=y_true, y_score=y_pred, pos_label=pos_group)
@@ -452,6 +448,7 @@ metrics_names = ['Accuracy', 'SSE'] #for plotting
 # this will serve as baseline for performance
 from scipy import stats
 
+# TODO: X data sets for trian and test are unused
 def do_trivial(train_x, train_y, test_x, test_y, metrics_list, metrics_names, color):
     scores = []
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
@@ -469,11 +466,6 @@ models.append('Trivial')
 scores_white.append(white_trivial_scores)
 scores_red.append(red_trivial_scores)
 
-#%%
-#import metrics
-
-from sklearn.metrics import precision_score
-from sklearn.metrics import confusion_matrix
 
 
 
@@ -482,19 +474,28 @@ from sklearn.metrics import confusion_matrix
 # Replicate Author's SVM
 from sklearn.svm import SVR
 np.set_printoptions(precision=4)
-def Authors_SVM(x_train, y_train, x_test, y_test):
+def Authors_SVM(x_train, y_train, x_test, y_test, ds_type=None):
     # using gamma values that the authors found were the best
     white_gamma = 2**1.55  # 2.928
     red_gamma = 2**0.19  # 1.14
     gamma = np.logspace(-3, 6, 20, 2)
-    parameters = {'C':range(1,20), 'gamma':gamma}
-    best_w = {'C': 2, 'gamma': 0.6951927961775606}
-    best_r = {'C': 1, 'gamma': 0.07847599703514611}
+    grid_search = {'C':range(1,20), 'gamma':gamma}
+    best_w = {'C': [2], 'gamma': [0.6951927961775606]}
+    best_r = {'C': [1], 'gamma': [0.07847599703514611]}
     author_params = {'C':[3], 'gamma':[white_gamma, red_gamma]}
     svm_clf = svm.SVR(kernel='rbf')
 
+    param=None
+    if ds_type == 'white':
+        param = best_w
+    elif ds_type == 'red':
+        param = best_r
+    elif ds_type == 'authors':
+        param = author_params
+    else:
+        param = grid_search
 
-    clf = GridSearchCV(svm_clf, parameters, n_jobs=1, verbose=True, cv=5)
+    clf = GridSearchCV(svm_clf, param, n_jobs=1, verbose=True, cv=5)
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
@@ -510,7 +511,10 @@ def Authors_SVM(x_train, y_train, x_test, y_test):
     # get precision scores
     prec_w = precision_score(y_test, y_pred, average=None, zero_division=0)
     print(prec_w)
-    
+
+Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'author')
+Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'author')
+
 Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
