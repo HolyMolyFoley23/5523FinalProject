@@ -451,8 +451,9 @@ def do_trivial(train_x, train_y, test_x, test_y, color):
     data_analyze(test_y, pred, color, 'Trivial')
     return pred
 
+do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, 'White')
 do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'Red')
-do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'White')
+
 
 
 
