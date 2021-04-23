@@ -118,11 +118,11 @@ red = red.drop(columns = ['type'])
 white = white.dropna()
 red = red.dropna()
 
-labels = [0,1,2,3,4,5,6,7,8,9,10,11]
+bins = [0,1,2,3,4,5,6,7,8,9,10,11]
 
 # white wine
 fig, ax = plt.subplots(1,1)
-ax.hist(white['quality'], bins=labels, align='left')
+ax.hist(white['quality'], bins=bins, align='left')
 ax.set_title('Histogram of White Wine Quality')
 ax.set_xlabel('Quality')
 ax.set_ylabel('Count')
@@ -136,7 +136,7 @@ plt.clf()
 
 # red wine
 fig, ax = plt.subplots(1,1)
-ax.hist(red['quality'], bins=labels, align='left')
+ax.hist(red['quality'], bins=bins, align='left')
 ax.set_title('Histogram of Red Wine Quality')
 ax.set_xlabel('Quality')
 ax.set_ylabel('Count')
@@ -175,7 +175,7 @@ print(red.info())
 
 # %%
 ## Data visualizations
-
+labels = [4, 5, 6, 7, 8]
 # Histograms
 # white wine
 fig, ax = plt.subplots(1,1)
@@ -234,7 +234,7 @@ from sklearn.manifold import TSNE
 from sklearn.preprocessing import StandardScaler
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
-labels = [4, 5, 6, 7, 8]
+
 test_size = 0.33
 
 # Red wine
