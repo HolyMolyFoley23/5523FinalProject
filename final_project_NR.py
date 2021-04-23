@@ -292,12 +292,14 @@ score_df_col = ["Classifier", "Color", "Accuracy", "SSE"]
 score_df = pd.DataFrame(columns=score_df_col)
 
 def data_analyze(test_y, y_pred, wine_color, classifier_name):
+    wine_color = wine_color.capitalize()
+    classifier_name = classifier_name.capitalize()
     labels = [4,5,6,7,8]
 
     acc = accuracy_score(test_y, y_pred)
     SSE_data = SSE(test_y, y_pred)
     score_df.loc[len(score_df.index)] = [classifier_name, wine_color, acc, SSE_data]
-
+    
     print (f"Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
     print (f"SSE for {classifier_name} on {wine_color} dataset is {SSE_data}")
     title = f"{classifier_name} - {wine_color} Wine"
@@ -494,7 +496,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Author's SVM")
+        data_analyze(y_test, y_pred, color, "author's-SVM")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -502,7 +504,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
         print("MAE: {}", mean_absolute_error(y_test, y_pred)) 
         print(confusion_matrix(y_test, y_pred))
         print(precision_score(y_test, y_pred, average=None, zero_division=0))
-   
+
 Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
@@ -552,8 +554,8 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
         'outlier_label':['most_frequent'],
         'algorithm': ['ball_tree', 'kd_tree', 'brute']
         }
-    best_w = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
-    best_r = {'algorithm': 'ball_tree', 'n_jobs': 1, 'outlier_label': 'most_frequent', 'radius': 2.5, 'weights': 'distance'}
+    best_w = {'algorithm': ['ball_tree'], 'n_jobs': [1], 'outlier_label': ['most_frequent'], 'radius': [2.5], 'weights': ['distance']}
+    best_r = {'algorithm': ['ball_tree'], 'n_jobs': [1], 'outlier_label': ['most_frequent'], 'radius': [2.5], 'weights': ['distance']}
     param=None
     if color == 'white':
         param = best_w
@@ -562,7 +564,7 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
     else:
         param = grid_search
     model = RadiusNeighborsClassifier()
-    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=3)
+    clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=3)  # cv=3 so that we have enough classes in each k-fold
     clf.fit(x_train, y_train)
     y_pred = clf.predict(x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
