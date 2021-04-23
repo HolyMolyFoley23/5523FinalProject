@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import StandardScaler
 #data_path = './winequalityN.csv'
 #HI 
 data_path = r'winequalityN.csv'
@@ -160,27 +162,6 @@ SSE_white = []
 models_red = []
 accuracy_red = []
 SSE_red = []
-
-# TODO: add in functions for precision, MAD, and REC - M
-# ok actually these were useless...whopps
-def precision(clf, X_test, y_true, labels=None):
-    y_pred = clf.predict(X_test)
-    scores = precision_score(y_true, y_pred, labels)
-    return scores
-
-
-def MAD(y_true, y_pred):
-    # author's MAD == scikit learn's MAE
-    from sklearn.metrics import mean_absolute_error
-    score = mean_absolute_error(y_true, y_pred) 
-    return score
-
-
-def REC():
-    # wtf why did the authors use something that has almost zero resources for it? At least in python
-    pass
-
-
 
 # TODO: 2D representation of classifier splitting data - J
 
@@ -636,8 +617,7 @@ plt.clf()
 
 #%%
 # K-nearest neighbor
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import StandardScaler
+
 # TODO: make function - N baby
 #What N?
 # maybe total classes -1 Play around a little
