@@ -693,7 +693,6 @@ def svm_function(x_train, y_train, x_test, y_test, color):
     rbf.fit(x_train,y_train)
     y_pred = rbf.predict(x_test)
     data_analyze(y_test, y_pred, color, "SVM")
-    return rbf
 
 svm_function(white_train_x, white_train_y, white_test_x, white_test_y,"White")
 svm_function(red_train_x, red_train_y, red_test_x, red_test_y,"Red")
