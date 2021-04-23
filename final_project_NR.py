@@ -92,30 +92,6 @@ def do_tree(train_x, train_y, test_x, test_y, params, metrics_list, metrics_name
     confusion(test_y, pred, labels=labels,
           title=f"Decision tree classifier - {color} Wine")
     return pred, scores
-
-#%%
-# Experimenting with feature selection
-def diff(l1, l2):
-    return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
-
-l_red = []
-l_white = []
-sel_features_inorder_white = []
-sel_features_inorder_red = []
-for i in range(1, 12):
-    white_train, white_test, white_selected_features = FeatureSelection(i, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
-    l_white.append(white_selected_features)
-    red_train, red_test, red_selected_features = FeatureSelection(i, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
-    l_red.append(red_selected_features)
-    if i == 1:
-        sel_features_inorder_white.append(l_white[0])
-        sel_features_inorder_red.append(l_red[0])
-    else:
-        sel_features_inorder_white.append(diff(l_white[i-1], l_white[i-2]))
-        sel_features_inorder_red.append(diff(l_red[i-1], l_red[i-2]))
-        
-print(f'White selected features, in order: {sel_features_inorder_white}')
-print(f'Red selected features, in order: {sel_features_inorder_red}')
               
 # %%
 ## Data preprocessing and cleaning
@@ -136,11 +112,11 @@ red = red.drop(columns = ['type'])
 white = white.dropna()
 red = red.dropna()
 
-labels = [0,1,2,3,4,5,6,7,8,9,10,11]
+bins = [0,1,2,3,4,5,6,7,8,9,10,11]
 
 # white wine
 fig, ax = plt.subplots(1,1)
-ax.hist(white['quality'], bins=labels, align='left')
+ax.hist(white['quality'], bins=bins, align='left')
 ax.set_title('Histogram of White Wine Quality')
 ax.set_xlabel('Quality')
 ax.set_ylabel('Count')
@@ -154,7 +130,7 @@ plt.clf()
 
 # red wine
 fig, ax = plt.subplots(1,1)
-ax.hist(red['quality'], bins=labels, align='left')
+ax.hist(red['quality'], bins=bins, align='left')
 ax.set_title('Histogram of Red Wine Quality')
 ax.set_xlabel('Quality')
 ax.set_ylabel('Count')
@@ -193,7 +169,7 @@ print(red.info())
 
 # %%
 ## Data visualizations
-
+labels = [4, 5, 6, 7, 8]
 # Histograms
 # white wine
 fig, ax = plt.subplots(1,1)
@@ -238,9 +214,6 @@ plt.show()
 plt.clf()
 # alcohol content has highest correlation with quality for both red and white wine
 
-
-
-
 # %%
 ### Train/Test Split and other Utilities
 # Paper did a 2/3 1/3 split
@@ -259,7 +232,7 @@ from sklearn.preprocessing import StandardScaler
 
 # labels for confusion matrices
 # TODO: fix labels, remove 3 and 9 - N
-labels = [4, 5, 6, 7, 8]
+
 test_size = 0.33
 
 # Red wine
@@ -298,6 +271,30 @@ accuracy_red = []
 SSE_red = []
 
 
+#%%
+# Experimenting with feature selection
+def diff(l1, l2):
+    return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
+
+l_red = []
+l_white = []
+sel_features_inorder_white = []
+sel_features_inorder_red = []
+for i in range(1, 12):
+    white_train, white_test, white_selected_features = FeatureSelection(i, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+    l_white.append(white_selected_features)
+    red_train, red_test, red_selected_features = FeatureSelection(i, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
+    l_red.append(red_selected_features)
+    if i == 1:
+        sel_features_inorder_white.append(l_white[0])
+        sel_features_inorder_red.append(l_red[0])
+    else:
+        sel_features_inorder_white.append(diff(l_white[i-1], l_white[i-2]))
+        sel_features_inorder_red.append(diff(l_red[i-1], l_red[i-2]))
+        
+print(f'White selected features, in order: {sel_features_inorder_white}')
+print(f'Red selected features, in order: {sel_features_inorder_red}')
+              
 # %%
 #perplexity = 50 for white test data perplexity = 20 for red test data
 #I might have to play around a little bit more
@@ -336,18 +333,16 @@ def SSE(actual, pred):
 #svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
 #data_analyze("White", white_svm, "SVM")
 def data_analyze(wine_color,classifier,classifier_name):
-    labels = ""
+    labels = [4,5,6,7,8]
     if(wine_color=="Red"):
         y_pred = classifier.predict(red_test_x)
         test_y = red_test_y
-        labels = labels
         acc = accuracy_score(test_y, y_pred)
         accuracy_red.append(acc)
         SSE_red.append(SSE(test_y, y_pred))
     elif(wine_color=="White"):
         y_pred = classifier.predict(white_test_x)
         test_y = white_test_y
-        labels = labels
         acc = accuracy_score(test_y, y_pred)
         accuracy_white.append(acc)
         SSE_white.append(SSE(test_y, y_pred))
@@ -357,7 +352,9 @@ def data_analyze(wine_color,classifier,classifier_name):
     print (f" Accuracy for {classifier_name} on {wine_color} dataset is {acc}")
     print (f" SSE for {classifier_name} on {wine_color} dataset is {SSE}")
 
-
+    print(len(test_y))
+    print(len(y_pred))
+    print(len(labels))
     data = confusion_matrix(test_y, y_pred, labels = labels)
     df_cm = pd.DataFrame(data, columns = labels, index = labels)
     df_cm.index.name = 'Actual'
