@@ -795,21 +795,21 @@ MLP(red_train_x, red_train_y, red_test_x, red_test_y)
 # ## feature selection
 # TODO: make function, maybe use PCA? - N
 # %%
-from sklearn.decomposition import PCA
+#from sklearn.decomposition import PCA
 
-pca = PCA(n_components = 2, random_state = 42)
-white_reduced = pca.fit_transform(white_train_x)
-white_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
-print(white_pca)
+#pca = PCA(n_components = 2, random_state = 42)
+#white_reduced = pca.fit_transform(white_train_x)
+#white_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
+#print(white_pca)
 
-red_reduced = pca.fit_transform(red_train_x)
-red_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
-print(red_pca)
+#red_reduced = pca.fit_transform(red_train_x)
+#red_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
+#print(red_pca)
 
-# ChooseKBest feature selection - we should play around with this
-no_features = 3
-white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
-red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
+## ChooseKBest feature selection - we should play around with this
+#no_features = 3
+#white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+#red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 # %%
