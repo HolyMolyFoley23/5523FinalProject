@@ -217,6 +217,9 @@ def SSE(actual, pred):
     return s
 
 #Prints aout SSE and Accuracy Data and prints out graph
+#Example
+#svm_function(white_train_x, white_train_y, white_test_x, white_test_y)
+#data_analyze("White", white_svm, "SVM")
 def data_analyze(wine_color,classifier,classifier_name):
     labels = ""
     if(wine_color=="Red"):
