@@ -750,7 +750,7 @@ MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 # Plotting performance
 # bar graphs to compare performance of classifiers
 
-plot_metrics(scores_df, 'Accuracy', 'White')
+plot_metrics(score_df, 'Accuracy', 'White')
 
 
 
