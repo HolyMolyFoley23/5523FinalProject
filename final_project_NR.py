@@ -490,7 +490,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Author-SVM")
+        data_analyze(y_test, y_pred, color, "Auth-SVM")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -564,7 +564,7 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Radius Neighbors Classifier")
+        data_analyze(y_test, y_pred, color, "RNC")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -709,7 +709,7 @@ def MLP_Regressor(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Multi-Layer Perceptron")
+        data_analyze(y_test, y_pred, color, "MLP")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -752,7 +752,11 @@ MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 plot_metrics(score_df, 'Accuracy', 'White')
 
+# %%
+plot_metrics(score_df, 'Accuracy', 'Red')
 
 
 
 ### Misearble Analysis
+
+# %%
