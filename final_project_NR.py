@@ -133,6 +133,17 @@ plt.clf()
 
 # %%
 ### Train/Test Split and Data Standardizations
+from sklearn.feature_selection import SelectKBest
+def FeatureSelection(k, x_train, y_train, x_test, y_test):
+    s = SelectKBest(k=k)
+    s.fit(x_train, y_train)
+    # mask = s.get_support(True)
+    # selected_features = df.columns[mask].tolist()
+    train_selected = s.transform(x_train)
+    test_selected = s.transform(x_test)
+    return train_selected, test_selected
+
+
 
 # Paper did a 2/3 1/3 split
 # It eventually won't matter when we do k-fold cross validation
@@ -181,15 +192,6 @@ SSE_red = []
 #%%
 # Experimenting with feature selection
 ## Defining functions
-from sklearn.feature_selection import SelectKBest
-def FeatureSelection(k, df, x_train, y_train, x_test, y_test):
-    s = SelectKBest(k=k).fit(x_train, y_train)
-    mask = s.get_support(True)
-    selected_features = df.columns[mask].tolist()
-    train_selected = SelectKBest(k=k).fit_transform(x_train, y_train)
-    test_selected = SelectKBest(k=k).fit_transform(x_test, y_test)
-    return train_selected, test_selected, selected_features
-
 def diff(l1, l2):
     return (list(list(set(l1)-set(l2))+ list(set(l2)-set(l1))))
 
@@ -473,7 +475,6 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     best_r = {'C': [1], 'gamma': [0.07847599703514611]}
     author_params = {'C':[3], 'gamma':[white_gamma, red_gamma]}
     svm_clf = SVR(kernel='rbf')
-
     param=None
     if color == 'white':
         param = best_w
@@ -485,8 +486,12 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
         param = grid_search
 
     clf = GridSearchCV(svm_clf, param, n_jobs=1, verbose=True, cv=5)
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
+
+    #new_x_train, new_x_test = FeatureSelection(11, x_train, y_train, x_test, y_test)
+    new_x_train = x_train
+    new_x_test = x_test
+    clf.fit(new_x_train, y_train)
+    y_pred = clf.predict(new_x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
@@ -559,12 +564,18 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
         param = grid_search
     model = RadiusNeighborsClassifier()
     clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=3)  # cv=3 so that we have enough classes in each k-fold
-    clf.fit(x_train, y_train)
-    y_pred = clf.predict(x_test)
+
+    new_x_train, new_x_test = FeatureSelection(11, x_train, y_train, x_test, y_test)
+    # new_x_train = x_train
+    # new_x_test = x_test
+    clf.fit(new_x_train, y_train)
+    y_pred = clf.predict(new_x_test)
+
+
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Radius Neighbors Classifier")
+        data_analyze(y_test, y_pred, color, "RNC")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -574,7 +585,7 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
         print(precision_score(y_test, y_pred, average=None, zero_division=0))
     
 RNC(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
-RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
+#RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
@@ -709,7 +720,7 @@ def MLP_Regressor(x_train, y_train, x_test, y_test, color=None):
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
     if color == 'white' or color == 'red':
-        data_analyze(y_test, y_pred, color, "Multi-Layer Perceptron")
+        data_analyze(y_test, y_pred, color, "MLP")
 
     if color==None:
         print('best parameters: {}', clf.best_params_)
@@ -740,10 +751,6 @@ MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 #red_pca = pd.DataFrame(pca.components_,columns=features,index = ['PC-1','PC-2'])
 #print(red_pca)
 
-## ChooseKBest feature selection - we should play around with this
-#no_features = 3
-#white_train_selected, white_test_selected, white_selected_features = FeatureSelection(no_features, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
-#red_train_selected, red_test_selected, red_selected_features = FeatureSelection(no_features, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 # %%
