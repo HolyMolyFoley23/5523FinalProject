@@ -604,23 +604,47 @@ def do_tree(train_x, train_y, test_x, test_y, params, color):
     data_analyze(test_y, pred, color, 'DT')
     return pred
 
-# feature selection
-# testing number of features yielded n=5 as ideal number of features for red; using all features was ideal for white
-red_train_selected, red_test_selected, red_selected_features = FeatureSelection(5, red_x, red_train_x, red_train_y, red_test_x, red_test_y)              
-              
+def optimize_tree(df, x_train, y_train, x_test, y_test, params):
+    n = []
+    parameters = []
+    accuracy = []
+    sse = []
+    for i in range(1,12):
+        n.append(i)
+        train, test, x = FeatureSelection(i, df, x_train, y_train, x_test, y_test)
+        dt = tree.DecisionTreeClassifier(random_state = 42)
+        clf = RandomizedSearchCV(dt, params, n_jobs=1, n_iter=10, verbose=True, random_state=42, cv=3)
+        clf.fit(train, y_train)
+        p = clf.best_params_
+        parameters.append(p)
+        d = tree.DecisionTreeClassifier(max_depth = p['max_depth'],
+                                      max_leaf_nodes = p['max_leaf_nodes'],
+                                      criterion = p['criterion'],
+                                      random_state = 42)
+        d2 = d.fit(train, y_train)
+        pred = d2.predict(test)
+        acc = accuracy_score(y_test, pred)
+        s = SSE(y_test, pred)
+        accuracy.append(acc)
+        sse.append(s)
+    data = {'Number of Features': n, 'Parameters': parameters, 'Accuracy': accuracy, 'SSE': sse}
+    dataframe = pd.DataFrame(data = data)
+    best = dataframe.loc[dataframe['Accuracy'].idxmax()]
+    best_k = best[0]
+    best_params = best[1]
+    return dataframe, best_k, best_params
+    
 parameters = {'max_depth':range(1,1000), 'criterion' :['gini', 'entropy'],
               'max_leaf_nodes':range(1,1000)}
-dt = tree.DecisionTreeClassifier(random_state = 42)
-clf = RandomizedSearchCV(dt, parameters, n_jobs=1, n_iter=10, verbose=True, random_state=42, cv=3)
 
-clf.fit(white_train_x, white_train_y)
-white_params = clf.best_params_
+white_tree_df, white_tree_best_k, white_tree_best_params = optimize_tree(white_x, white_train_x, white_train_y, white_test_x, white_test_y, parameters)   
+red_tree_df, red_tree_best_k, red_tree_best_params = optimize_tree(red_x, red_train_x, red_train_y, red_test_x, red_test_y, parameters)   
 
-clf.fit(red_train_selected, red_train_y)
-red_params = clf.best_params_
+white_tree_train_selected, white_tree_test_selected, white_tree_selected_features = FeatureSelection(white_tree_best_k, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+red_tree_train_selected, red_tree_test_selected, red_tree_selected_features = FeatureSelection(red_tree_best_k, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
 
-do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
-do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, 'Red')
+white_tree_pred = do_tree(white_tree_train_selected, white_train_y, white_tree_test_selected, white_test_y, white_tree_best_params, 'White')
+red_tree_pred = do_tree(red_tree_train_selected, red_train_y, red_tree_test_selected, red_test_y, red_tree_best_params, 'Red')
 
 
 
@@ -656,19 +680,45 @@ def do_knn(train_x, train_y, test_x, test_y, params, color):
     data_analyze(test_y, pred, color, 'KNN')
     return pred
 
+def optimize_knn(df, x_train, y_train, x_test, y_test, params):
+    n = []
+    parameters = []
+    accuracy = []
+    sse = []
+    for i in range(1,12):
+        n.append(i)
+        train, test, x = FeatureSelection(i, df, x_train, y_train, x_test, y_test)
+        knn = KNeighborsClassifier()
+        clf = GridSearchCV(knn, params, scoring='accuracy', n_jobs=1, verbose=True, cv=3)
+        clf.fit(train, y_train)
+        p = clf.best_params_
+        parameters.append(p)
+        k = KNeighborsClassifier(n_neighbors = p['n_neighbors'],
+                           weights = p['weights'])
+        k.fit(train, y_train)
+        pred = k.predict(test)
+        acc = accuracy_score(y_test, pred)
+        s = SSE(y_test, pred)
+        accuracy.append(acc)
+        sse.append(s)
+    data = {'Number of Features': n, 'Parameters': parameters, 'Accuracy': accuracy, 'SSE': sse}
+    dataframe = pd.DataFrame(data = data)
+    best = dataframe.loc[dataframe['Accuracy'].idxmax()]
+    best_k = best[0]
+    best_params = best[1]
+    return dataframe, best_k, best_params
 
 parameters = {'n_neighbors':range(1,20), 'weights':['uniform', 'distance']}
-knn = KNeighborsClassifier()
-clf = GridSearchCV(knn, parameters, scoring='precision_micro', n_jobs=1, verbose=True, cv=3)
 
-clf.fit(white_train_x, white_train_y)
-white_params = clf.best_params_
+red_knn_df, red_knn_best_k, red_knn_best_params = optimize_knn(red_x, red_train_x, red_train_y, red_test_x, red_test_y, parameters)   
+white_knn_df, white_knn_best_k, white_knn_best_params = optimize_knn(white_x, white_train_x, white_train_y, white_test_x, white_test_y, parameters)  
 
-clf.fit(red_train_x, red_train_y)
-red_params = clf.best_params_
+white_knn_train_selected, white_knn_test_selected, white_knn_selected_features = FeatureSelection(white_knn_best_k, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
+red_knn_train_selected, red_knn_test_selected, red_knn_selected_features = FeatureSelection(red_knn_best_k, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
 
-do_knn(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
-do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params,  'Red')
+white_knn_pred = do_knn(white_knn_train_selected, white_train_y, white_knn_test_selected, white_test_y, white_knn_best_params, 'White')
+red_knn_pred = do_knn(red_knn_train_selected, red_train_y, red_knn_test_selected, red_test_y, red_knn_best_params,  'Red')
+
 
 
 
