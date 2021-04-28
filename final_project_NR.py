@@ -176,19 +176,6 @@ white_test_x = scaler.fit_transform(white_test_x)
 red_train_x = scaler.fit_transform(red_train_x)
 red_test_x = scaler.fit_transform(red_test_x)
 
-# Models and metrics lists for later plotting/comparison
-models = []
-scores_white = []  
-scores_red = []
-models_white = []
-accuracy_white = []
-SSE_white = []
-models_red = []
-accuracy_red = []
-SSE_red = []
-
-
-
 #%%
 # Experimenting with feature selection
 ## Defining functions
