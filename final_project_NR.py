@@ -134,14 +134,14 @@ plt.clf()
 # %%
 ### Train/Test Split and Data Standardizations
 from sklearn.feature_selection import SelectKBest
-def FeatureSelection(k, x_train, y_train, x_test, y_test):
-    s = SelectKBest(k=k)
-    s.fit(x_train, y_train)
-    # mask = s.get_support(True)
-    # selected_features = df.columns[mask].tolist()
-    train_selected = s.transform(x_train)
-    test_selected = s.transform(x_test)
-    return train_selected, test_selected
+def FeatureSelection(k, df, x_train, y_train, x_test, y_test):
+    s = SelectKBest(k=k).fit(x_train, y_train)
+    mask = s.get_support(True)
+    selected_features = df.columns[mask].tolist()
+    train_selected = SelectKBest(k=k).fit_transform(x_train, y_train)
+    test_selected = SelectKBest(k=k).fit_transform(x_test, y_test)
+    return train_selected, test_selected, selected_features
+
 
 
 
@@ -565,7 +565,7 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
     model = RadiusNeighborsClassifier()
     clf = GridSearchCV(model, param, n_jobs=1, verbose=True, cv=3)  # cv=3 so that we have enough classes in each k-fold
 
-    new_x_train, new_x_test = FeatureSelection(11, x_train, y_train, x_test, y_test)
+    new_x_train, new_x_test, selected_features = FeatureSelection(11, red_x, x_train, y_train, x_test, y_test)
     # new_x_train = x_train
     # new_x_test = x_test
     clf.fit(new_x_train, y_train)
