@@ -646,10 +646,8 @@ red_tree_train_selected, red_tree_test_selected, red_tree_selected_features = Fe
 white_tree_pred = do_tree(white_tree_train_selected, white_train_y, white_tree_test_selected, white_test_y, white_tree_best_params, 'White')
 red_tree_pred = do_tree(red_tree_train_selected, red_train_y, red_tree_test_selected, red_test_y, red_tree_best_params, 'Red')
 
-
-
-
-
+# best for white is 9 features, 827 leaf nodes, 672 max depth, and gini criterion
+# best for red is 2 features, 65 leaf nodes, 144 max depth, and gini criterion
 
 # %%
 # Naive Bayes
@@ -719,12 +717,8 @@ red_knn_train_selected, red_knn_test_selected, red_knn_selected_features = Featu
 white_knn_pred = do_knn(white_knn_train_selected, white_train_y, white_knn_test_selected, white_test_y, white_knn_best_params, 'White')
 red_knn_pred = do_knn(red_knn_train_selected, red_train_y, red_knn_test_selected, red_test_y, red_knn_best_params,  'Red')
 
-
-
-
-
-
-
+# best for white is 11 features, 17 NN, weights = distance
+# best for red is 5 features, 13 NN, weights = distance
 
 #%%
 # Support vector machines
