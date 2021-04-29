@@ -150,7 +150,7 @@ def FeatureSelection(k, x_train, y_train, x_test, y_test):
 # but it can easily be adjusted for preliminary models with test_size=0.33
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-test_size = 0.33
+test_size = 0.2
 
 # Red wine
 red_x = red.drop(['quality'], axis=1)
@@ -464,7 +464,6 @@ do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'Red')
 # %%
 # Replicate Author's SVM
 from sklearn.svm import SVR
-np.set_printoptions(precision=4)
 def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     # using gamma values that the authors found were the best
     white_gamma = 2**1.55  # 2.928
@@ -480,7 +479,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
         param = best_w
     elif color == 'red':
         param = best_r
-    elif color == 'authors':
+    elif color == 'authors-red' or color == 'authors-white':
         param = author_params
     else:  # no color given then seraches for best scores
         param = grid_search
@@ -494,7 +493,7 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
     y_pred = clf.predict(new_x_test)
     y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
 
-    if color == 'white' or color == 'red':
+    if color == 'white' or color == 'red' or color == 'authors-red' or color == 'authors-white':
         data_analyze(y_test, y_pred, color, "Auth-SVM")
 
     if color==None:
@@ -506,8 +505,10 @@ def Authors_SVM(x_train, y_train, x_test, y_test, color=None):
 
 Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
 Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
-
-
+Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y, 'authors-white')
+Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y, 'authors-red')
+Authors_SVM(white_train_x, white_train_y, white_test_x, white_test_y)
+Authors_SVM(red_train_x, red_train_y, red_test_x, red_test_y)
 
 
 
@@ -585,7 +586,7 @@ def RNC(x_train, y_train, x_test, y_test, color=None):
         print(precision_score(y_test, y_pred, average=None, zero_division=0))
     
 RNC(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
-#RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
+RNC(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
@@ -621,8 +622,6 @@ red_params = clf.best_params_
 
 do_tree(white_train_x, white_train_y, white_test_x, white_test_y, white_params, 'White')
 do_tree(red_train_selected, red_train_y, red_test_selected, red_test_y, red_params, 'Red')
-
-
 
 
 
@@ -672,6 +671,47 @@ do_knn(red_train_x, red_train_y, red_test_x, red_test_y, red_params,  'Red')
 
 
 
+#%%
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import kneighbors_graph
+def KNR(x_train, y_train, x_test, y_test, color=None):
+    grid_search = {
+        'weights': ['distance'],
+        'n_neighbors': range(1, 50),
+        'n_jobs': [1],
+        'algorithm': ['ball_tree']
+        }
+    best_w = {'algorithm': ['ball_tree'], 'n_jobs': [1], 'n_neighbors': [26], 'weights': ['distance']}
+    best_r = {'algorithm': ['ball_tree'], 'n_jobs': [1], 'n_neighbors': [2.5], 'weights': ['distance']}
+    param=None
+    if color == 'white':
+        param = best_w
+    elif color == 'red':
+        param = best_r
+    else:
+        param = grid_search
+    model = KNeighborsRegressor()
+    clf = GridSearchCV(model, grid_search, n_jobs=2, verbose=True, cv=5)  # cv=3 so that we have enough classes in each k-fold
+
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    y_pred = np.rint(y_pred)  # round predictions to nearest integer for classification
+
+    if color == 'white' or color == 'red':
+        print('best parameters: {}', clf.best_params_)
+        data_analyze(y_test, y_pred, color, "RNC")
+        # A = kneighbors_graph(x_test, 2, mode='connectivity', include_self=True)
+        # print(A)
+
+    if color==None:
+        print('best parameters: {}', clf.best_params_)
+        print('best score: {}', clf.best_score_)
+        print("MAE: {}", mean_absolute_error(y_test, y_pred)) 
+        print(confusion_matrix(y_test, y_pred))
+        print(precision_score(y_test, y_pred, average=None, zero_division=0))
+    
+KNR(white_train_x, white_train_y, white_test_x, white_test_y, 'white')
+KNR(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 
 
 
