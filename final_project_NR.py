@@ -687,7 +687,7 @@ def optimize_knn(df, x_train, y_train, x_test, y_test, params):
         n.append(i)
         train, test, x = FeatureSelection(i, df, x_train, y_train, x_test, y_test)
         knn = KNeighborsClassifier()
-        clf = GridSearchCV(knn, params, scoring='accuracy', n_jobs=1, verbose=True, cv=3)
+        clf = GridSearchCV(knn, params, scoring='accuracy', n_jobs=1, verbose=0, cv=3)
         clf.fit(train, y_train)
         p = clf.best_params_
         parameters.append(p)
@@ -717,11 +717,8 @@ red_knn_train_selected, red_knn_test_selected, red_knn_selected_features = Featu
 white_knn_pred = do_knn(white_knn_train_selected, white_train_y, white_knn_test_selected, white_test_y, white_knn_best_params, 'White')
 red_knn_pred = do_knn(red_knn_train_selected, red_train_y, red_knn_test_selected, red_test_y, red_knn_best_params,  'Red')
 
-# best for white is 11 features, 17 NN, weights = distance
-# best for red is 5 features, 13 NN, weights = distance
-
-
-
+print(f'Best KNN parameters for white: {white_knn_best_k} features, {white_knn_best_params["n_neighbors"]} neighbors, weights = {white_knn_best_params["weights"]}.')
+print(f'Best KNN parameters for red: {red_knn_best_k} features, {red_knn_best_params["n_neighbors"]} neighbors, weights = {red_knn_best_params["weights"]}.')
 
 #%%
 from sklearn.neighbors import KNeighborsRegressor
