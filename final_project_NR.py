@@ -590,7 +590,8 @@ def do_tree(train_x, train_y, test_x, test_y, params, color):
     d = dt.fit(train_x, train_y)
     pred = d.predict(test_x)
     data_analyze(test_y, pred, color, 'DT')
-    return pred
+    importances = d.feature_importances_
+    return pred, importances
 
 def optimize_tree(df, x_train, y_train, x_test, y_test, params):
     n = []
@@ -601,7 +602,7 @@ def optimize_tree(df, x_train, y_train, x_test, y_test, params):
         n.append(i)
         train, test, x = FeatureSelection(i, df, x_train, y_train, x_test, y_test)
         dt = tree.DecisionTreeClassifier(random_state = 42)
-        clf = RandomizedSearchCV(dt, params, n_jobs=1, n_iter=10, verbose=True, random_state=42, cv=3)
+        clf = RandomizedSearchCV(dt, params, n_jobs=1, n_iter=10, verbose=0, random_state=42, cv=3)
         clf.fit(train, y_train)
         p = clf.best_params_
         parameters.append(p)
@@ -631,11 +632,22 @@ red_tree_df, red_tree_best_k, red_tree_best_params = optimize_tree(red_x, red_tr
 white_tree_train_selected, white_tree_test_selected, white_tree_selected_features = FeatureSelection(white_tree_best_k, white_x, white_train_x, white_train_y, white_test_x, white_test_y)
 red_tree_train_selected, red_tree_test_selected, red_tree_selected_features = FeatureSelection(red_tree_best_k, red_x, red_train_x, red_train_y, red_test_x, red_test_y)
 
-white_tree_pred = do_tree(white_tree_train_selected, white_train_y, white_tree_test_selected, white_test_y, white_tree_best_params, 'White')
-red_tree_pred = do_tree(red_tree_train_selected, red_train_y, red_tree_test_selected, red_test_y, red_tree_best_params, 'Red')
+white_tree_pred, white_tree_importances = do_tree(white_tree_train_selected, white_train_y, white_tree_test_selected, white_test_y, white_tree_best_params, 'White')
+red_tree_pred, red_tree_importances = do_tree(red_tree_train_selected, red_train_y, red_tree_test_selected, red_test_y, red_tree_best_params, 'Red')
 
-# best for white is 9 features, 827 leaf nodes, 672 max depth, and gini criterion
-# best for red is 2 features, 65 leaf nodes, 144 max depth, and gini criterion
+wtdata = {'Feature': white_tree_selected_features, 'Importance': white_tree_importances}
+rtdata = {'Feature': red_tree_selected_features, 'Importance': red_tree_importances}
+
+white_importances_df = pd.DataFrame(data = wtdata)
+red_importances_df = pd.DataFrame(data = rtdata)
+
+print('Feature Importances - White Dataset')
+print(white_importances_df.sort_values(by = 'Importance', ascending = False))
+print('Feature Importances - Red Dataset')
+print(red_importances_df.sort_values(by = 'Importance', ascending = False))
+
+print(f'Best decision tree parameters for white: {white_tree_best_k} features, max depth of {white_tree_best_params["max_depth"]}, max leaf nodes of {white_tree_best_params["max_leaf_nodes"]}, {white_tree_best_params["criterion"]} criterion.')
+print(f'Best decision tree parameters for red: {red_tree_best_k} features, max depth of {red_tree_best_params["max_depth"]}, max leaf nodes of {red_tree_best_params["max_leaf_nodes"]}, {red_tree_best_params["criterion"]} criterion.')
 
 # %%
 # Naive Bayes
