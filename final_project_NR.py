@@ -717,8 +717,8 @@ red_knn_train_selected, red_knn_test_selected, red_knn_selected_features = Featu
 white_knn_pred = do_knn(white_knn_train_selected, white_train_y, white_knn_test_selected, white_test_y, white_knn_best_params, 'White')
 red_knn_pred = do_knn(red_knn_train_selected, red_train_y, red_knn_test_selected, red_test_y, red_knn_best_params,  'Red')
 
-print(f'Best KNN parameters for white: {white_knn_best_k} features, {white_knn_best_params["n_neighbors"]} neighbors, weights = {white_knn_best_params["weights"]}.')
-print(f'Best KNN parameters for red: {red_knn_best_k} features, {red_knn_best_params["n_neighbors"]} neighbors, weights = {red_knn_best_params["weights"]}.')
+print(f'Best KNN parameters for white: {white_knn_best_k} features, {white_knn_best_params["n_neighbors"]} neighbors, {white_knn_best_params["weights"]} weights function.')
+print(f'Best KNN parameters for red: {red_knn_best_k} features, {red_knn_best_params["n_neighbors"]} neighbors, {red_knn_best_params["weights"]} weights function.')
 
 #%%
 from sklearn.neighbors import KNeighborsRegressor
@@ -826,10 +826,9 @@ MLP_Regressor(red_train_x, red_train_y, red_test_x, red_test_y, 'red')
 # bar graphs to compare performance of classifiers
 
 plot_metrics(score_df, 'Accuracy', 'White')
-
-# %%
 plot_metrics(score_df, 'Accuracy', 'Red')
-
+plot_metrics(score_df, 'SSE', 'White')
+plot_metrics(score_df, 'SSE', 'Red')
 
 
 ### Misearble Analysis
