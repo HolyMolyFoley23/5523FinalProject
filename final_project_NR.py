@@ -434,14 +434,13 @@ def oneVsRestAnalysis(model, X_train, y_train, X_test, y_test, classes):
 # this will serve as baseline for performance
 from scipy import stats
 
-# TODO: X data sets for trian and test are unused
-def do_trivial(train_x, train_y, test_x, test_y, color):
+def do_trivial(train_y, test_y, color):
     pred = np.full(test_y.shape, stats.mode(train_y)[0])
     data_analyze(test_y, pred, color, 'Trivial')
     return pred
 
-do_trivial(white_train_x, white_train_y, white_test_x, white_test_y, 'White')
-do_trivial(red_train_x, red_train_y, red_test_x, red_test_y, 'Red')
+do_trivial(white_train_y, white_test_y, 'White')
+do_trivial(red_train_y, red_test_y, 'Red')
 
 
 
